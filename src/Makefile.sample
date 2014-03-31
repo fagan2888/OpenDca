@@ -1,0 +1,23 @@
+LDFLAGS =    -llapack -lblas  -lpthread 
+CPPFLAGS = -O3 -Werror -Wall  -IEngine    -I../../PsimagLite/src -I../../PsimagLite -I../../dmrgpp/src/Engine  -DUSE_PTHREADS  
+CXX = g++  
+all: openDca 
+
+openDca.o: openDca.cpp  Makefile Engine/Version.h
+	$(CXX) $(CPPFLAGS) -c openDca.cpp
+
+openDca: openDca.o
+	$(CXX) -o  openDca openDca.o $(LDFLAGS)
+
+
+Makefile.dep: openDca.cpp Engine/Version.h
+	$(CXX) $(CPPFLAGS) -MM openDca.cpp   > Makefile.dep
+
+clean: Makefile.dep
+	rm -f core* openDca  *.o *.dep 
+
+Engine/Version.h: gitrev
+	./gitrev > Engine/Version.h
+
+include Makefile.dep
+
