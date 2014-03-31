@@ -74,24 +74,25 @@ the LAPACK and BLAS libraries, the gsl library, make, and git
 if you don't have them.
 
 2. Issue
-
+```
 cd someDirectory/
 git clone https://github.com/g1257/PsimagLite.git
 git clone https://github.com/g1257/dmrgpp.git
 git clone https://github.com/g1257/LanczosPlusPlus.git
 git clone https://github.com/g1257/OpenDca.git
+```
 
 3. Compile msGeometry
 
 4. Now issue
-
+```
 cd ../src
 make
-
+```
 5. You can run it with
-
+```
 ./openDca -f TestSuite/inputs/input0.inp
-
+```
 -------------------------------------------------------------------------------
 
 TODO LIST
