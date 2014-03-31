@@ -1,0 +1,57 @@
+TotalNumberOfSites=12
+NumberOfTerms=1
+DegreesOfFreedom=1
+GeometryKind=ladderbath
+GeometryOptions=none
+LadderLeg=2
+BathSitesPerSite=2
+Connectors 2 1.0 1.0
+Connectors 2 1.0 1.0
+Connectors 8 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035
+
+Model=HubbardOneBand
+hubbardU        12 0 0 0 0 8 8  8 8 0 0 0 0
+potentialV     24  1.84716619 1.84716619 -1.84716619 -1.84716619  -4 -4 -4 -4 1.84716619 1.84716619 -1.84716619 -1.84716619
+                        1.84716619 1.84716619 -1.84716619 -1.84716619  -4 -4 -4 -4 1.84716619 1.84716619 -1.84716619 -1.84716619
+SolverOptions=CorrectionVectorTargetting,lanczosAllowsZero
+CorrectionA=0
+Version=version
+OutputFile=input0.txt
+InfiniteLoopKeptStates=100
+FiniteLoops 8   5 200 0 -5 200 0 -5 200 0 5 200 0
+                5 200 0 -5 200 0 -5 200 0 5 200 0
+TargetElectronsUp=6
+TargetElectronsDown=6
+TSPSites 1 4 
+TSPLoops 1 0
+DynamicDmrgType=0
+TSPProductOrSum=sum
+CorrectionVectorOmega=0
+
+CorrectionVectorEta=0.1
+CorrectionVectorAlgorithm=Krylov
+
+TSPOperator=raw
+RAW_MATRIX
+4 4
+0.0    0.0    0.0   0.0
+1.0    0.0    0.0   0.0
+0.0    0.0    0.0   0.0
+0.0    0.0    1.0   0.0
+FERMIONSIGN=-1
+JMVALUES 0 0
+AngularFactor=1
+
+DcaOmegaTotal=10
+DcaLargeKs=4
+DcaNumberOfMatsubaras=10
+DcaOmegaBegin=0
+DcaOmegaStep=0.1
+DcaFinePoints=100
+DcaBeta=10
+DcaMu=0
+DcaDelta=0.1
+DcaSolver=Lanczos
+DcaIterations=2
+
+

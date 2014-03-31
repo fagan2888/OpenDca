@@ -5,7 +5,7 @@
 #include "RandomForTests.h"
 #include "Minimizer.h"
 
-namespace DynamicClusterApprox {
+namespace OpenDca {
 
 // Anderson distance
 template<class ComplexType,typename ParametersType>
