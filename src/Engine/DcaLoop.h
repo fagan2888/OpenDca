@@ -101,16 +101,16 @@ public:
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
 		MatrixType gfcluster(totalOmegas,largeKs*largeKs);
-		MatrixType gammaOmega(params_.numberOfMatsubaras,gckfsc_.n_col());
+		MatrixType gammaOmegaReal(totalOmegas,largeKs);
 		RealType sigmaNorm = 0;
 
 		for (SizeType i = 0; i < params_.iterations; ++i) {
 			makeGf();
-			diagUpdate(gfcluster,gammaOmega,barEpsilon);
+			diagUpdate(gfcluster,gammaOmegaReal,barEpsilon);
 			std::cout<<"gfcluster\n";
 			std::cout<<gfcluster;
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = makeSigma(gfcluster,gammaOmega,barEpsilon);
+			sigmaNorm = makeSigma(gfcluster,gammaOmegaReal,barEpsilon);
 			dcaError -= sigmaNorm;
 			std::cout<<"sigma\n";
 			std::cout<<sigma_;
@@ -132,8 +132,8 @@ public:
 	}
 
 	void diagUpdate(MatrixType& gfCluster,
-	                           MatrixType& gammaOmega,
-	                          const VectorRealType& ekbar)
+	                MatrixType& gammaOmegaReal,
+	                const VectorRealType& ekbar)
 	{
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc_.n_row(),gckfsc_.n_col());
@@ -142,6 +142,8 @@ public:
 
 		std::cerr<<"gamma omega...\n";
 		getDeltaOmega(deltaOmega,integral,ekbar);
+
+		MatrixType gammaOmega(params_.numberOfMatsubaras,gckfsc_.n_col());
 		getGammaOmega(gammaOmega,deltaOmega);
 		std::cerr<<"make h params...\n";
 		effectiveHamiltonian.build(gammaOmega,ekbar,integral);
@@ -150,6 +152,10 @@ public:
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
+
+		for (SizeType i = 0; i < gammaOmegaReal.n_col(); ++i)
+			for (SizeType j = 0; j < gammaOmegaReal.n_row(); ++j)
+				gammaOmegaReal(j,i) = effectiveHamiltonian.andersonG0(j,i);
 	}
 
 private:
@@ -198,8 +204,6 @@ private:
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k
 				deltaOmega(i,j)= realOmega - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
-				if (std::imag(deltaOmega(i,j))>0)
-					deltaOmega(i,j)=std::real(deltaOmega(i,j));
 				integral[j] += std::imag(deltaOmega(i,j));
 			}
 		}

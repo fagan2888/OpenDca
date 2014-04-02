@@ -99,7 +99,7 @@ public:
 	{
 		bool converged = false;
 
-		 for (RealType tolerance=1e-12;tolerance<1e-6;tolerance *=10) {
+		 for (RealType tolerance=1e-6;tolerance<1e-3;tolerance *=10) {
 			int err = aux(p,Gf,tolerance,integral);
 			if (err > 0) {
 				converged = true;
@@ -136,8 +136,6 @@ private:
 			for (SizeType k=p.size()/2;k<p.size();++k)
 				p[k] = rng_();
 
-			std::cerr<<"pInitial\n";
-			std::cerr<<p;
 			err=minimizer.simplex(p,delta,tolerance);
 
 			if (err > 0) break;
@@ -147,6 +145,8 @@ private:
 			std::cerr<<"getAndersonParameters: converged after ";
 			std::cerr<<err<<" iterations and ";
 			std::cerr<<" tolerance="<<tolerance<<std::endl;
+			std::cerr<<"pInitial\n";
+			std::cerr<<p;
 		}
 
 		return err;

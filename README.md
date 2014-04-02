@@ -102,5 +102,6 @@ TODO LIST
 * DMRG solver
 * Measurements
 * msGeometry
+* model is also hard wired
 
 -------------------------------------------------------------------------------

@@ -172,6 +172,11 @@ public:
 		delete solver;
 	}
 
+	const ComplexType& andersonG0(SizeType omegaIndex, SizeType K) const
+	{
+		return gammaRealFreq_(omegaIndex,K);
+	}
+
 private:
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)

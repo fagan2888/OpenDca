@@ -140,14 +140,7 @@ public:
 
 	void readline(RealType& x,PsimagLite::String label)
 	{
-		if (label == "AngularFactor=" ||
-		    label == "CorrectionA=" ||
-		    label == "CorrectionVectorOmega=" ||
-		    label == "CorrectionVectorEta=") {
-			io_.readline(x,label);
-		} else {
-			unimplemented("readline",label);
-		}
+		io_.readline(x,label);
 	}
 
 	void read(VectorRealType& v, PsimagLite::String label)
