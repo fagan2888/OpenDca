@@ -72,6 +72,9 @@ public:
 		SizeType alpha = 0;
 		SizeType alpha2 = 0;
 
+		VectorRealType originalV(2*total);
+		io_.read(originalV,"potentialV");
+
 		for (SizeType i=0;i<total;++i) {
 			SizeType ind = dcaIndexToDmrgIndex(i);
 			for (SizeType j=0;j<total;++j) {
@@ -80,6 +83,8 @@ public:
 				hubbardParams_.hoppings(ind,jnd)=0.0;
 				if (i<params_.largeKs && j<params_.largeKs) { //we're in the cluster
 					hubbardParams_.hoppings(ind,jnd)=std::real(tCluster(i,j));
+					if (ind == jnd)
+						hubbardParams_.potentialV[ind] = hubbardParams_.potentialV[ind + total] = originalV[ind];
 				} else if (i<params_.largeKs && j>=params_.largeKs) { // we're inter cluster
 					getBathPoint(r,alpha,j,Nc,nBath);
 					hubbardParams_.hoppings(ind,jnd)=std::real(tBathCluster(alpha,r+i*Nc));

@@ -43,6 +43,7 @@ public:
 		io.read(nup,"TargetElectronsUp");
 		io.read(ndown,"TargetElectronsDown");
 
+		std::cout<<mp_;
 		model_ = new ModelType(nup,ndown,mp_,geometry2);
 		engine_ = new EngineType(*model_,geometry2.numberOfSites(),myInput);
 		RealType Eg = engine_->gsEnergy();

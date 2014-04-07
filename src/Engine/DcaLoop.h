@@ -42,7 +42,7 @@ private:
 		for (SizeType k=0;k<ndim;++k)
 			kplus += cos(kvector[k]);
 
-		return -0.5*kplus;
+		return -2.0 * kplus;
 	}
 
 	const ParamsType& params_;
@@ -168,11 +168,13 @@ private:
 			gckf[omegaIndex] = 0.0;
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
 				RealType omega = params_.omegaBegin + params_.omegaStep * omegaIndex;
-				ComplexType tmp = -dispersion_(K,ktilde) - params_.mu
+				ComplexType tmp = -dispersion_(K,ktilde) + params_.mu
 				                                         + ComplexType(omega,params_.delta)
 				                                         - sigma_(omegaIndex,K);
 				gckf[omegaIndex] += 1.0/tmp;
 			}
+
+			gckf[omegaIndex] /= meshPoints;
 		}
 
 		std::cout<<"gckf for k = "<<K<<"\n";
@@ -190,6 +192,7 @@ private:
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
 				barEpsilon[bigK] += dispersion_(bigK,ktilde);
 			}
+			barEpsilon[bigK] /= meshPoints;
 		}
 	}
 
@@ -273,7 +276,7 @@ private:
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j) {
-				if (std::imag(data(i,j))>0) data(i,j)=std::real(data(i,j));
+				//if (std::imag(data(i,j))>0) data(i,j)=std::real(data(i,j));
 				std::cout<<imag(data(i,j))<<" ";
 			}
 
