@@ -271,42 +271,24 @@ private:
 		// transform from real to k space
 		ft4(data,gfCluster,fTCoefsR2K_,params_.largeKs);
 
-		std::cout<<"#DATAIMAG\n";
+		std::cout<<"#DATA\n";
 		for (SizeType i = 0;i < data.n_row(); ++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j) {
 				//if (std::imag(data(i,j))>0) data(i,j)=std::real(data(i,j));
-				std::cout<<imag(data(i,j))<<" ";
+				std::cout<<data(i,j)<<" ";
 			}
 
 			std::cout<<"\n";
 		}
 
-		std::cout<<"#DATAREAL\n";
+		std::cout<<"#ONEOVERDATA\n";
 		for (SizeType i = 0;i < data.n_row(); ++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j)
-				std::cout<<real(data(i,j))<<" ";
-			std::cout<<"\n";
-		}
-
-		std::cout<<"#ONEOVERDATAREAL\n";
-		for (SizeType i = 0;i < data.n_row(); ++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
-			for (SizeType j = 0;j < data.n_col(); ++j)
-				std::cout<<std::real(1.0/data(i,j))<<" ";
-			std::cout<<"\n";
-		}
-
-		std::cout<<"#ONEOVERDATAIMAG\n";
-		for (SizeType i = 0; i < data.n_row(); ++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
-			for (SizeType j = 0;j < data.n_col(); ++j)
-				std::cout<<std::imag(1.0/data(i,j))<<" ";
+				std::cout<<1.0/data(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
@@ -315,29 +297,18 @@ private:
 			for (SizeType j=0;j < sigma.n_col(); ++j) {
 				sigma(i,j) = realOmega - epsbar[j] - gammakomega(i,j)
 				                   - static_cast<RealType>(params_.largeKs)/data(i,j);
-				if (std::imag(sigma(i,j))>0) sigma(i,j) = std::real(sigma(i,j));
+				//if (std::imag(sigma(i,j))>0) sigma(i,j) = std::real(sigma(i,j));
 			}
 		}
 
-		std::cout<<"#SIGMAIMAG\n";
+		std::cout<<"#SIGMA\n";
 		for (SizeType i=0;i<sigma.n_row();++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";
-			for (SizeType j=0;j<sigma.n_col();j++) std::cout<<imag(sigma(i,j))<<" ";
-			std::cout<<"\n";
-		}
-		std::cout<<"#SIGMAREAL\n";
-		for (SizeType i=0;i<sigma.n_row();i++) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
-			for (SizeType j=0;j<sigma.n_col();j++)
-				std::cout<<real(sigma(i,j))<<" ";
+			for (SizeType j=0;j<sigma.n_col();j++) std::cout<<sigma(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
-		std::cout<<"#\n";
-
-		// test for convergence by inspecting Im[sigma(0,ic) ]           
 		return calcRealSigma(sigma);
 	}
 
