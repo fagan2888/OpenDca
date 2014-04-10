@@ -302,6 +302,7 @@ private:
 		}
 
 		std::cout<<"#SIGMA\n";
+		std::cout<<sigma.n_row()<<" "<<sigma.n_col()<<"\n";
 		for (SizeType i=0;i<sigma.n_row();++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";

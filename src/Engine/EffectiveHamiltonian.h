@@ -96,22 +96,13 @@ public:
 
 		getGammaKOmegaReal();
 
-		std::cout<<"#REALGAMMAIMAG\n";
+		std::cout<<"#REALGAMMA\n";
+		std::cout<<gammaRealFreq_.n_row()<<" "<<gammaRealFreq_.n_col()<<"\n";
 		for (SizeType i=0;i<gammaRealFreq_.n_row();++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			std::cout<<realOmega<<" ";
 			for (SizeType j=0;j<gammaRealFreq_.n_col();++j)
-				std::cout<<std::imag(gammaRealFreq_(i,j))<<" ";
-			std::cout<<"\n";
-		}
-
-		std::cout<<"#REALGAMMAREAL\n";
-
-		for (SizeType i=0;i<gammaRealFreq_.n_row();++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
-			for (SizeType j=0;j<gammaRealFreq_.n_col();++j)
-				std::cout<<std::real(gammaRealFreq_(i,j))<<" ";
+				std::cout<<gammaRealFreq_(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
@@ -167,7 +158,7 @@ public:
 		for (SizeType i = 0; i < Nc; ++i)
 			for (SizeType j = 0; j < i; ++j)
 				for (SizeType x = 0; x < gfCluster.n_row(); ++x)
-					gfCluster(x,i+j*Nc) = std::conj(gfCluster(x,j+i*Nc));
+					gfCluster(x,i+j*Nc) = gfCluster(x,j+i*Nc);
 
 		delete solver;
 	}
