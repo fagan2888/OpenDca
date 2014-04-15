@@ -1,21 +1,7 @@
 #ifndef DCA_SOLVER_DMRG_H
 #define DCA_SOLVER_DMRG_H
 #include "DcaSolverBase.h"
-#include "LanczosSolver.h"
 #include "Parallelizer.h"
-#include "../../dmrgpp/src/Engine/ParametersDmrgSolver.h"
-#include "../../dmrgpp/src/Engine/VectorWithOffsets.h"
-#include "../../dmrgpp/src/Engine/MatrixVectorOnTheFly.h"
-#include "../../dmrgpp/src/Engine/LeftRightSuper.h"
-#include "../../dmrgpp/src/Engine/TargetingCorrectionVector.h"
-#include "../../dmrgpp/src/Engine/Operators.h"
-#include "../../dmrgpp/src/Engine/BasisWithOperators.h"
-#include "../../dmrgpp/src/Engine/ModelHelperLocal.h"
-#include "../../dmrgpp/src/Engine/ModelBase.h"
-#include "../../dmrgpp/src/Engine/ProgramGlobals.h"
-#include "../../dmrgpp/src/Engine/ModelSelector.h"
-#include "../../dmrgpp/src/Engine/WaveFunctionTransfFactory.h"
-#include "../../dmrgpp/src/Engine/DmrgSolver.h"
 #include "ParallelDmrgSolver.h"
 
 namespace OpenDca {
@@ -25,27 +11,6 @@ class DcaSolverDmrg : public DcaSolverBase<DcaToDmrgType, VaryingGeometryType> {
 
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
 	typedef typename DcaToDmrgType::RealType RealType;
-	typedef Dmrg::ParametersDmrgSolver<RealType,typename InputNgType::Readable> ParametersDmrgSolverType;
-	typedef std::complex<RealType> ComplexType;
-	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
-	typedef Dmrg::Basis<SparseMatrixType> BasisType;
-	typedef Dmrg::Operators<BasisType> OperatorsType;
-	typedef Dmrg::BasisWithOperators<OperatorsType> BasisWithOperatorsType;
-	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
-	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
-	typedef Dmrg::ModelBase<ModelHelperType,
-	                                  ParametersDmrgSolverType,
-	                                  DcaToDmrgType,
-	                                  VaryingGeometryType> ModelBaseType;
-	typedef Dmrg::MatrixVectorOnTheFly<ModelBaseType> MatrixVectorType;
-	typedef Dmrg::VectorWithOffsets<ComplexType> VectorWithOffsetType;
-	typedef Dmrg::WaveFunctionTransfFactory<LeftRightSuperType,VectorWithOffsetType> WaveFunctionTransfType;
-	typedef Dmrg::TargetingCorrectionVector<PsimagLite::LanczosSolver,
-	                                        MatrixVectorType,
-	                                        WaveFunctionTransfType> TargetingType;
-	typedef typename TargetingType::MatrixVectorType::ModelType ModelType;
-	typedef typename TargetingType::TargettingParamsType TargettingParamsType;
-	typedef Dmrg::DmrgSolver<TargetingType> SolverType;
 	typedef Run RunType;
 	typedef typename PsimagLite::Vector<RunType>::Type VectorRunType;
 
@@ -59,14 +24,10 @@ public:
 	DcaSolverDmrg(DcaToDmrgType& myInput,
 	                        const VaryingGeometryType& geometry2,
 	                        typename InputNgType::Readable& io)
-	 :  myInput_(myInput),
-	  geometry2_(geometry2),
-	  paramsDmrg_(io),
-	  modelSelector_(paramsDmrg_.model),
-	  model_(modelSelector_(paramsDmrg_,myInput,geometry2)),
-	  tsp_(myInput,model_),
-	  dmrgSolver_(model_,tsp_,myInput),
-	  sitesDone_(0)
+	 : myInput_(myInput),
+	   geometry2_(geometry2),
+	   io_(io),
+	   sitesDone_(0)
 	{}
 
 	void solve(MatrixType& gf,const VectorSizeType& sites,const PlotParamsType& plotParams)
@@ -100,11 +61,11 @@ private:
 
 	void solveForSite(MatrixType& gf,const VectorRunType& runs,const PlotParamsType& plotParams)
 	{
-		typedef ParallelDmrgSolver<PlotParamsType,MatrixType> ParallelDmrgSolverType;
+		typedef ParallelDmrgSolver<DcaSolverBaseType> ParallelDmrgSolverType;
 		typedef PsimagLite::Parallelizer<ParallelDmrgSolverType> ParallelizerType;
 		ParallelizerType threadedSolver(PsimagLite::Concurrency::npthreads,PsimagLite::MPI::COMM_WORLD);
 
-		ParallelDmrgSolverType helperSolver(gf,runs,plotParams);
+		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,plotParams);
 
 		threadedSolver.loopCreate(runs.size(),helperSolver);
 	}
@@ -113,11 +74,7 @@ private:
 	
 	DcaToDmrgType& myInput_;
 	const VaryingGeometryType& geometry2_;
-	ParametersDmrgSolverType paramsDmrg_;
-	Dmrg::ModelSelector<ModelType> modelSelector_;
-	const ModelType& model_;
-	TargettingParamsType tsp_;
-	SolverType dmrgSolver_;
+	typename InputNgType::Readable& io_;
 	VectorSizeType sitesDone_;
 };
 }

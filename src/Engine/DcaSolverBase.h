@@ -7,11 +7,13 @@
 
 namespace OpenDca {
 
-template<typename DcaToDmrgType,typename VaryingGeometryType>
+template<typename DcaToDmrgType_,typename VaryingGeometryType_>
 class DcaSolverBase {
 
 public:
 
+	typedef DcaToDmrgType_ DcaToDmrgType;
+	typedef VaryingGeometryType_ VaryingGeometryType;
 	typedef typename PsimagLite::Vector<SizeType>::Type VectorSizeType;
 	typedef typename DcaToDmrgType::RealType RealType;
 	typedef std::complex<RealType> ComplexType;
