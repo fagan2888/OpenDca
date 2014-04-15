@@ -206,7 +206,7 @@ private:
 		for (SizeType i=0;i<gckfsc_.n_row();++i) { // loop over freq.
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k
-				deltaOmega(i,j)= realOmega - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
+				deltaOmega(i,j)= realOmega + params_.mu - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
 				integral[j] += std::imag(deltaOmega(i,j));
 			}
 		}

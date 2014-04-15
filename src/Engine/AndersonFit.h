@@ -100,6 +100,7 @@ public:
 		bool converged = false;
 
 		 for (RealType tolerance=1e-6;tolerance<1e-3;tolerance *=10) {
+			std::fill(p.begin(), p.end(), 0.0);
 			int err = aux(p,Gf,tolerance,integral);
 			if (err > 0) {
 				converged = true;
