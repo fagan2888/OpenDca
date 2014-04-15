@@ -91,23 +91,33 @@ public:
 	{
 		SizeType mpiRank = PsimagLite::MPI::commRank(PsimagLite::MPI::COMM_WORLD);
 		SizeType npthreads = PsimagLite::Concurrency::npthreads;
+		SizeType clusterSites = gf_.n_col();
+		clusterSites = static_cast<SizeType>(sqrt(clusterSites));
 		
 		for (SizeType p=0;p<blockSize;p++) {
 			SizeType px = (threadNum+npthreads*mpiRank)*blockSize + p;
 			if (px >= total || px >= runs_.size()) continue;
 			const RunType& run = runs_[px];
-			
+
 			TargettingParamsType tsp(myInput_,model_);
-			
+
 			tsp.type( (run.dynamicDmrgType == RunType::TYPE_NORMAL) ? 0 : 1);
 			if (run.dynamicDmrgType == RunType::TYPE_DAGGER)
 				tsp.transposeConjugate(0);
-			
+
+			SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
+			tsp.setSite(0,siteDmrg);
+
 			RealType omegaValue = plotParams_.omega1 + plotParams_.deltaOmega*run.omegaIndex;
 			tsp.omega(omegaValue);
-			
+
 			SolverType dmrgSolver(model_,tsp,myInput_);
 			dmrgSolver.main(geometry2_);
+
+			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
+				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
+				gf_(run.omegaIndex,siteDmrg + site2Dmrg*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
+			}
 		}
 	}
 
