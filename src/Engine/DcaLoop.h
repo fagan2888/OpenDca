@@ -2,6 +2,7 @@
 #define DCA_LOOP_H
 #include "Matrix.h"
 #include "Vector.h"
+#include "Concurrency.h"
 #include "EffectiveHamiltonian.h"
 
 namespace OpenDca {
@@ -90,6 +91,8 @@ public:
 				fTCoefsR2K_(ik,ic)=ComplexType(cos(tmp),sin(tmp));
 			}
 		}
+
+		disableMpiInDmrgPlusPlus();
 	}
 
 	void main()
@@ -339,6 +342,22 @@ private:
 				gfdest(n,ik)=csum; //! no factor of 1/Nc
 			}
 		}
+	}
+
+	void disableMpiInDmrgPlusPlus()
+	{
+		typename PsimagLite::Vector<PsimagLite::String>::Type v;
+
+		v.push_back("BlockMatrix");
+		v.push_back("HamiltonianConnection");
+		v.push_back("KronConnections");
+		v.push_back("Operators");
+		v.push_back("ParallelDensityMatrix");
+		v.push_back("ParallelTriDiag");
+		v.push_back("ParallelWft");
+
+		for (SizeType i = 0; i < v.size(); ++i)
+			PsimagLite::Concurrency::mpiDisable(v[i]);
 	}
 
 	const ParametersType& params_;

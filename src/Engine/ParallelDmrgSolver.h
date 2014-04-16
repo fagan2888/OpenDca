@@ -3,6 +3,7 @@
 #include "Mpi.h"
 #include "Concurrency.h"
 #include "LanczosSolver.h"
+#include "Matrix.h"
 #include "../../dmrgpp/src/Engine/ParametersDmrgSolver.h"
 #include "../../dmrgpp/src/Engine/VectorWithOffsets.h"
 #include "../../dmrgpp/src/Engine/MatrixVectorOnTheFly.h"
@@ -119,6 +120,8 @@ public:
 				gf_(run.omegaIndex,siteDmrg + site2Dmrg*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
 			}
 		}
+
+		PsimagLite::MPI::allReduce(gf_);
 	}
 
 private:
