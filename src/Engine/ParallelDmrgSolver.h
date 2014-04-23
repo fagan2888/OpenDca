@@ -94,7 +94,8 @@ public:
 		SizeType npthreads = PsimagLite::Concurrency::npthreads;
 		SizeType clusterSites = gf_.n_col();
 		clusterSites = static_cast<SizeType>(sqrt(clusterSites));
-		
+		SizeType l = paramsDmrg_.filename.length();
+		paramsDmrg_.filename = paramsDmrg_.filename.substr(0,l-4) + ttos(mpiRank) + ".txt";
 		for (SizeType p=0;p<blockSize;p++) {
 			SizeType px = (threadNum+npthreads*mpiRank)*blockSize + p;
 			if (px >= total || px >= runs_.size()) continue;
