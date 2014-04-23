@@ -11,6 +11,7 @@
 #include "AndersonFit.h"
 #include "DcaSolverLanczos.h"
 #include "DcaSolverDmrg.h"
+#include "FreqEnum.h"
 
 namespace OpenDca {
 
@@ -53,8 +54,7 @@ public:
 	: params_(params),
 	  geometry_(geometry),
 	  io_(io),
-	  andersonVp_(params_.nofPointsInBathPerClusterPoint,params_.largeKs),
-	  andersonEp_(params_.nofPointsInBathPerClusterPoint,params_.largeKs),
+	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs),
 	  gammaRealFreq_(params_.omegas,params_.largeKs),
 	  garbage_(0)
 	{}
@@ -67,7 +67,8 @@ public:
 	// Get LanczosParams from Gf
 	void build(MatrixType& gf,
 	           const VectorRealType& ekbar,
-	           const VectorRealType& integral)
+	           const VectorRealType& integral,
+	           FreqEnum freqEnum)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 
@@ -91,10 +92,8 @@ public:
 			saveAndersonParameters(p,j);
 		}
 
-		inversionSymmetry(andersonVp_);
-		inversionSymmetry(andersonEp_);
-
-		getGammaKOmegaReal();
+		inversionSymmetry(p_,0,nBath);
+		inversionSymmetry(p_,nBath,p_.n_row());
 
 		std::cout<<"#REALGAMMA\n";
 		std::cout<<gammaRealFreq_.n_row()<<" "<<gammaRealFreq_.n_col()<<"\n";
@@ -108,11 +107,8 @@ public:
 
 		std::cout<<"#\n";
 
-		std::cout<<"andersonVp\n";
-		std::cout<<andersonVp_;
-
-		std::cout<<"andersonEp\n";
-		std::cout<<andersonEp_;
+		std::cout<<"andersonVp and andersonEp\n";
+		std::cout<<p_;
 
 		// Calculate "hoppings"	
 		garbage_ = makeHubbardParams(ekbar,io_);
@@ -163,55 +159,19 @@ public:
 		delete solver;
 	}
 
-	const ComplexType& andersonG0(SizeType omegaIndex, SizeType K) const
+	const MatrixType& andersonParameters() const
 	{
-		return gammaRealFreq_(omegaIndex,K);
+		return p_;
 	}
 
 private:
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)
 	{
-		SizeType n=static_cast<SizeType>(src.size()/2);
-
+		SizeType n=src.size();
 		for (SizeType i=0;i<n;++i) {
-			andersonVp_(i,k) = src[i];
-			andersonEp_(i,k) = src[i+n];
+			p_(i,k) = src[i];
 		}
-	}
-
-	void getGammaKOmegaReal()
-	{
-		SizeType nBath=andersonVp_.n_row();
-		VectorRealType p(2*nBath);
-
-		for (SizeType k=0;k<params_.largeKs;++k) {
-			for (SizeType i=0;i<nBath;++i) { //i over bath
-				p[i]=std::real(andersonVp_(i,k));
-				p[i+nBath]=std::real(andersonEp_(i,k));
-			}
-
-			getGammaKOmegaReal(k,p);
-		}
-	}
-
-	void getGammaKOmegaReal(SizeType k,const VectorRealType& p)
-	{
-		for (SizeType i=0;i<params_.omegas;++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			ComplexType z(realOmega,params_.delta);
-			gammaRealFreq_(i,k)=andersonG0Real(p,z,params_.mu);
-		}
-	}
-
-	ComplexType andersonG0Real(const VectorRealType&p, ComplexType z,RealType mu) const
-	{
-		SizeType n=static_cast<SizeType>(p.size()/2);
-		ComplexType ctmp=0.0;
-
-		for (SizeType i=0;i<n;++i) ctmp += p[i]*p[i]/(-p[i+n]+z);
-
-		return ctmp;
 	}
 
 	DcaToDmrgType* makeHubbardParams(const VectorRealType& ekbar,typename InputNgType::Readable& io)
@@ -220,11 +180,11 @@ private:
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		MatrixType tCluster(Nc,Nc);
 		MatrixType tBathCluster(nBath,Nc*Nc);
-		VectorType lambda(Nc*Nc*andersonEp_.n_row());
+		VectorType lambda(Nc*Nc*nBath);
 
 		ft(tCluster,ekbar);
-		ft5(tBathCluster,andersonVp_);
-		calcBathLambda(lambda,andersonEp_);
+		ft5(tBathCluster,p_,0);
+		calcBathLambda(lambda,p_,nBath);
 
 		std::cout<<"tCluster\n";
 		std::cout<<tCluster;
@@ -251,17 +211,17 @@ private:
 		}
 	}
 
-	void ft5(MatrixType& dest,const MatrixType& src) const
+	void ft5(MatrixType& dest,const MatrixType& src,SizeType offset) const
 	{
 		SizeType Nc = src.n_col();
 
-		for (SizeType b=0;b<src.n_row();++b) { // bath
+		for (SizeType b=0;b<dest.n_row();++b) { // bath
 			for (SizeType i=0;i<Nc;++i) { //cluster real space
 				for (SizeType j=0;j<Nc;++j) { //cluster real space
 					dest(b,i+j*Nc) = 0.0;
 					for (SizeType k=0;k<Nc;++k) { //cluster k-space
 						RealType tmp = krProduct(k,i,j);
-						dest(b,i+j*Nc)+=ComplexType(cos(tmp),sin(tmp))*src(b,k);
+						dest(b,i+j*Nc)+=ComplexType(cos(tmp),sin(tmp))*src(b+offset,k);
 					}
 
 					dest(b,i+j*Nc)=std::real(dest(b,i+j*Nc))/static_cast<RealType>(geometry_.numberOfSites());
@@ -270,18 +230,19 @@ private:
 		}
 	}
 
-	void calcBathLambda(VectorType& lambda,const MatrixType& src) const
+	void calcBathLambda(VectorType& lambda,const MatrixType& src,SizeType offset) const
 	{
 		SizeType Nc=params_.largeKs;
-		assert(lambda.size() == Nc*Nc*src.n_row());
+		SizeType nBath = static_cast<SizeType>(0.5*src.n_row());
+		assert(lambda.size() == Nc*Nc*nBath);
 
-		for (SizeType i=0;i<src.n_row();i++) { // i is in the bath
+		for (SizeType i=0;i<nBath;i++) { // i is in the bath
 			for (SizeType j=0;j<Nc;j++) { // j is in the cluster (real space)
 				for (SizeType s=0;s<Nc;s++) { // j is in the cluster (real space)
 					lambda[j+s*Nc+i*Nc*Nc]=0.0;
 					for (SizeType k=0;k<Nc;k++) { // k is in the cluster (k-space)
 						RealType tmp = krProduct(k,j,s);
-						lambda[j+s*Nc+i*Nc*Nc]+= ComplexType(cos(tmp),sin(tmp))*src(i,k);
+						lambda[j+s*Nc+i*Nc*Nc]+= ComplexType(cos(tmp),sin(tmp))*src(i+offset,k);
 					}
 
 					lambda[j+s*Nc+i*Nc*Nc] /= static_cast<RealType>(geometry_.numberOfSites());
@@ -315,31 +276,31 @@ private:
 		return scalarProduct(kvector,rvector);
 	}
 
-	void inversionSymmetry(MatrixType& andersonp)
+	void inversionSymmetry(MatrixType& p,int start, int end)
 	{
-		MatrixType tempMatrix(andersonp.n_row(),andersonp.n_col());
+		int nBath = end - start;
+		MatrixType tempMatrix(nBath,p.n_col());
 
-		for (SizeType i=0;i<andersonp.n_row();++i) {
-			for (SizeType j=0;j<andersonp.n_col();++j) {
-				tempMatrix(i,j)=0.0;
+		for (int i=start;i<end;++i) {
+			for (SizeType j=0;j<p.n_col();++j) {
+				tempMatrix(i-start,j)=0.0;
 				for (SizeType op=0;op<geometry_.nGroupK();++op) {
 					SizeType k = geometry_.ickequ(j,op);
-					tempMatrix(i,j) += andersonp(i,k);
+					tempMatrix(i-start,j) += p(i,k);
 				}
-				tempMatrix(i,j) /= static_cast<RealType>(geometry_.nGroupK());
+				tempMatrix(i-start,j) /= static_cast<RealType>(geometry_.nGroupK());
 			}
 		}
 
-		for (SizeType i=0;i<andersonp.n_row();++i)
-			for (SizeType j=0;j<andersonp.n_col();++j)
-				andersonp(i,j)=tempMatrix(i,j); // andersonp = tempMatrix		
+		for (int i=start;i<end;++i)
+			for (SizeType j=0;j<p.n_col();++j)
+				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix		
 	}
 
 	const ParametersType& params_;
 	const GeometryType& geometry_;
 	typename InputNgType::Readable& io_;
-	MatrixType andersonVp_;
-	MatrixType andersonEp_;
+	MatrixType p_;
 	MatrixType gammaRealFreq_;
 	DcaToDmrgType* garbage_;
 };

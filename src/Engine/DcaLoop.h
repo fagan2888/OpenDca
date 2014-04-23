@@ -4,6 +4,7 @@
 #include "Vector.h"
 #include "Concurrency.h"
 #include "EffectiveHamiltonian.h"
+#include "FreqEnum.h"
 
 namespace OpenDca {
 
@@ -95,25 +96,24 @@ public:
 		disableMpiInDmrgPlusPlus();
 	}
 
-	void main()
+	void main(FreqEnum freqEnum,SizeType iterations)
 	{
 		SizeType largeKs = params_.largeKs;
-		SizeType totalOmegas = params_.omegas;
 		VectorRealType barEpsilon(largeKs);
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
-		MatrixType gfcluster(totalOmegas,largeKs*largeKs);
-		MatrixType gammaOmegaReal(totalOmegas,largeKs);
+		MatrixType gfcluster(params_.omegas,largeKs*largeKs);
+		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs);
 		RealType sigmaNorm = 0;
 
-		for (SizeType i = 0; i < params_.iterations; ++i) {
-			makeGf();
-			diagUpdate(gfcluster,gammaOmegaReal,barEpsilon);
+		for (SizeType i = 0; i < iterations; ++i) {
+			makeGf(freqEnum);
+			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
 			std::cout<<"gfcluster\n";
 			std::cout<<gfcluster;
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = makeSigma(gfcluster,gammaOmegaReal,barEpsilon);
+			sigmaNorm = makeSigma(gfcluster,gammaOmegaRealOrImag,barEpsilon);
 			dcaError -= sigmaNorm;
 			std::cout<<"sigma\n";
 			std::cout<<sigma_;
@@ -121,22 +121,22 @@ public:
 		}
 	}
 
-	void makeGf()
+	void makeGf(FreqEnum freqEnum)
 	{
-		VectorType gckf(params_.omegas);
+		VectorType gckf(omegaSize(freqEnum));
 		SizeType largeKs = params_.largeKs;
-		SizeType totalOmegas = params_.omegas;
 
 		for (SizeType k = 0; k < largeKs; ++k) {
-			makeGf(gckf,k);
-			for (SizeType omegaIndex = 0; omegaIndex < totalOmegas; ++omegaIndex)
+			makeGf(gckf,k,freqEnum);
+			for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex)
 				gckfsc_(omegaIndex,k) = gckf[omegaIndex]/(1.0+sigma_(omegaIndex,k)*gckf[omegaIndex]);
 		}
 	}
 
 	void diagUpdate(MatrixType& gfCluster,
-	                MatrixType& gammaOmegaReal,
-	                const VectorRealType& ekbar)
+	                MatrixType& gammaOmegaRealOrImag,
+	                const VectorRealType& ekbar,
+	                FreqEnum freqEnum)
 	{
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc_.n_row(),gckfsc_.n_col());
@@ -144,35 +144,33 @@ public:
 		EffectiveHamiltonianType effectiveHamiltonian(params_,geometry_,io_);
 
 		std::cerr<<"gamma omega...\n";
-		getDeltaOmega(deltaOmega,integral,ekbar);
+		getDeltaOmega(deltaOmega,integral,ekbar,freqEnum);
 
 		MatrixType gammaOmega(params_.numberOfMatsubaras,gckfsc_.n_col());
-		getGammaOmega(gammaOmega,deltaOmega);
+		getGammaOmega(gammaOmega,deltaOmega,freqEnum);
 		std::cerr<<"make h params...\n";
-		effectiveHamiltonian.build(gammaOmega,ekbar,integral);
+		effectiveHamiltonian.build(gammaOmega,ekbar,integral,freqEnum);
 		std::cout<<effectiveHamiltonian;
 
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
+		
+		const MatrixType& p = effectiveHamiltonian.andersonParameters();
 
-		for (SizeType i = 0; i < gammaOmegaReal.n_col(); ++i)
-			for (SizeType j = 0; j < gammaOmegaReal.n_row(); ++j)
-				gammaOmegaReal(j,i) = effectiveHamiltonian.andersonG0(j,i);
+		getGammaKOmega(gammaOmegaRealOrImag,p,freqEnum);
 	}
 
 private:
 
-	void makeGf(VectorType& gckf,SizeType K)
+	void makeGf(VectorType& gckf,SizeType K,FreqEnum freqEnum)
 	{
-		SizeType totalOmegas = params_.omegas;
 		SizeType meshPoints = geometry_.sizeOfMesh();
-		for (SizeType omegaIndex = 0; omegaIndex < totalOmegas; ++omegaIndex) {
+		for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
 			gckf[omegaIndex] = 0.0;
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
-				RealType omega = params_.omegaBegin + params_.omegaStep * omegaIndex;
 				ComplexType tmp = -dispersion_(K,ktilde) + params_.mu
-				                                         + ComplexType(omega,params_.delta)
+				                                         + omegaValue(omegaIndex,freqEnum)
 				                                         - sigma_(omegaIndex,K);
 				gckf[omegaIndex] += 1.0/tmp;
 			}
@@ -182,6 +180,23 @@ private:
 
 		std::cout<<"gckf for k = "<<K<<"\n";
 		std::cout<<gckf;
+	}
+
+	ComplexType omegaValue(SizeType omegaIndex,FreqEnum freqEnum) const
+	{
+		
+		if (freqEnum == FREQ_REAL)
+			return ComplexType(params_.omegaBegin + params_.omegaStep * omegaIndex,params_.delta);
+		else
+			return ComplexType(0, matsubara(omegaIndex));
+	}
+
+	SizeType omegaSize(FreqEnum freqEnum) const
+	{
+		if (freqEnum == FREQ_REAL)
+			return params_.omegas;
+		else
+			return params_.numberOfMatsubaras;
 	}
 
 	void coarseDispersion(VectorRealType& barEpsilon)
@@ -201,25 +216,26 @@ private:
 
 	//! Delta_k(omega) = omega + ekbar(k) -sigma(omega,k) - 1.0/gckfsc_(omega,k)
 	void getDeltaOmega(MatrixType& deltaOmega,
-	                                  VectorRealType& integral,
-	                                  const VectorRealType& ekbar)
+	                   VectorRealType& integral,
+	                   const VectorRealType& ekbar,
+	                   FreqEnum freqEnum)
 	{
 		for (SizeType j=0;j<gckfsc_.n_col();j++) integral[j]=0.0;
 
 		for (SizeType i=0;i<gckfsc_.n_row();++i) { // loop over freq.
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
+			ComplexType omega = omegaValue(i,freqEnum); 
 			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k
-				deltaOmega(i,j)= realOmega + params_.mu - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
+				deltaOmega(i,j)= omega + params_.mu - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
 				integral[j] += std::imag(deltaOmega(i,j));
 			}
 		}
 
 		std::cout<<"#DELTAOMEGA\n";
 		for (SizeType i=0;i<gckfsc_.n_row();++i) { // loop over freq.
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
+			ComplexType omega = omegaValue(i,freqEnum);
+			std::cout<<std::real(omega)<<" ";
 			for (SizeType j=0;j<gckfsc_.n_col();++j)
-				std::cout<<std::imag(deltaOmega(i,j))<<" ";
+				std::cout<<deltaOmega(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
@@ -230,12 +246,18 @@ private:
 	}
 
 	void getGammaOmega(MatrixType& gammaOmega,
-	                   const MatrixType& deltaOmega)
+	                   const MatrixType& deltaOmega,
+	                   FreqEnum freqEnum)
 	{
+		if (freqEnum == FREQ_MATSUBARA) {
+			gammaOmega = deltaOmega;
+			return;
+		}
+
 		RealType factor = -params_.omegaStep/M_PI;
 
 		for (SizeType i=0;i<params_.numberOfMatsubaras;++i) {
-			RealType wn = matSubara(i);
+			RealType wn = matsubara(i);
 
 			for (SizeType k=0;k<deltaOmega.n_col();++k) {
 				ComplexType sum = 0.0;
@@ -250,7 +272,7 @@ private:
 
 		std::cout<<"#GAMMA\n";
 		for (SizeType i=0;i<gammaOmega.n_row();++i) {
-			RealType wn = matSubara(i);
+			RealType wn = matsubara(i);
 			std::cout<<wn<<" ";
 			for (SizeType j=0;j<params_.largeKs;++j)
 				std::cout<<gammaOmega(i,j)<<" ";
@@ -258,7 +280,7 @@ private:
 		}
 	}
 
-	RealType matSubara(int ind) const
+	RealType matsubara(int ind) const
 	{
 		int halfNs = static_cast<int>(params_.numberOfMatsubaras*0.5);
 		return (2.0*(ind-halfNs)+1.0)*M_PI/params_.beta;
@@ -359,6 +381,26 @@ private:
 		for (SizeType i = 0; i < v.size(); ++i)
 			PsimagLite::Concurrency::mpiDisable(v[i]);
 	}
+
+	void getGammaKOmega(MatrixType& gammaFreq,const MatrixType& p,FreqEnum freqEnum)
+	{
+		for (SizeType k=0;k<params_.largeKs;++k) {
+			for (SizeType j=0;j<omegaSize(freqEnum);++j) {
+				ComplexType z = omegaValue(j,freqEnum);
+				gammaFreq(j,k)=andersonG0(p,k,z);
+			}
+		}
+	}
+
+	ComplexType andersonG0(const MatrixType& p, SizeType k,ComplexType z) const
+	{
+		SizeType n=static_cast<SizeType>(p.n_row()/2);
+		ComplexType ctmp=0.0;
+		
+		for (SizeType i=0;i<n;++i) ctmp += std::conj(p(i,k))*p(i,k)/(-p(i+n,k)+z);
+		
+		return ctmp;
+        }
 
 	const ParametersType& params_;
 	typename InputNgType::Readable& io_;

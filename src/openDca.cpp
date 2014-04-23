@@ -3,6 +3,7 @@
 #include "InputCheck.h"
 #include "Provenance.h"
 #include "DcaLoopGlobals.h"
+#include "FreqEnum.h"
 
 int main(int argc, char *argv[])
 {
@@ -49,6 +50,6 @@ int main(int argc, char *argv[])
 	ParametersType params(io);
 	DcaLoopType dcaLoop(params,io);
 
-	dcaLoop.main();
+	dcaLoop.main(OpenDca::FREQ_REAL,params.iterations);
 }
 
