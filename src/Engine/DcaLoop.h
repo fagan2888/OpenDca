@@ -142,6 +142,9 @@ public:
 				}
 			}
 		}
+
+		std::cout<<"GCKFSC\n";
+		std::cout<<gckfsc_;
 	}
 
 	void diagUpdate(MatrixType& gfCluster,
@@ -163,6 +166,7 @@ public:
 		effectiveHamiltonian.build(gammaOmega,ekbar,integral,freqEnum);
 		std::cout<<effectiveHamiltonian;
 
+		throw PsimagLite::RuntimeError("testing\n");
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
@@ -192,9 +196,6 @@ private:
 
 			gckf[omegaIndex] /= meshPoints;
 		}
-
-		std::cout<<"gckf for k = "<<K<<"\n";
-		std::cout<<gckf;
 	}
 
 	ComplexType omegaValue(SizeType omegaIndex,FreqEnum freqEnum) const
@@ -218,8 +219,8 @@ private:
 	{
 		SizeType meshPoints = geometry_.sizeOfMesh();
 		SizeType largeKs = params_.largeKs;
-		assert(barEpsilon.size() == largeKs);
 		SizeType norb = params_.orbitals;
+		assert(barEpsilon.size() == largeKs*norb*norb);
 
 		for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
 			for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
@@ -244,7 +245,7 @@ private:
 
 		for (SizeType i=0;i<gckfsc_.n_row();++i) { // loop over freq.
 			ComplexType omega = omegaValue(i,freqEnum); 
-			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k
+			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k and orbitals
 				deltaOmega(i,j)= omega + params_.mu - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
 				integral[j] += std::imag(deltaOmega(i,j));
 			}
@@ -286,7 +287,7 @@ private:
 					sum += factor * std::imag(deltaOmega(j,k))/ComplexType(-realOmega,wn);
 				}
 
-				gammaOmega(i,k) = sum/M_PI;
+				gammaOmega(i,k) = sum;
 			}
 		}
 
@@ -294,7 +295,7 @@ private:
 		for (SizeType i=0;i<gammaOmega.n_row();++i) {
 			RealType wn = matsubara(i);
 			std::cout<<wn<<" ";
-			for (SizeType j=0;j<params_.largeKs;++j)
+			for (SizeType j=0;j<gammaOmega.n_col();++j)
 				std::cout<<gammaOmega(i,j)<<" ";
 			std::cout<<"\n";
 		}
