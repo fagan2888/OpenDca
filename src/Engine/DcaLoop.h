@@ -20,7 +20,10 @@ public:
 	: params_(params),geometry_(geometry)
 	{}
 
-	RealType operator()(SizeType coarseIndex,SizeType fineIndex) const
+	RealType operator()(SizeType coarseIndex,
+	                    SizeType gamma1,
+	                    SizeType gamma2,
+	                    SizeType fineIndex) const
 	{
 		VectorRealType kvector(geometry_.dimension());
 		geometry_.index2Kvector(coarseIndex,kvector);
@@ -75,8 +78,8 @@ public:
 	  io_(io),
 	  geometry_(io,false,params_.smallKs),
 	  dispersion_(params,geometry_),
-	  sigma_(params.omegas,params.largeKs),
-	  gckfsc_(params.omegas,params.largeKs),
+	  sigma_(params.omegas,params.largeKs*params.orbitals*params.orbitals),
+	  gckfsc_(params.omegas,params.largeKs*params.orbitals*params.orbitals),
 	  fTCoefsR2K_(params.largeKs,params.largeKs)
 	{
 		SizeType Nc = params_.largeKs;
@@ -99,7 +102,8 @@ public:
 	void main(FreqEnum freqEnum,SizeType iterations)
 	{
 		SizeType largeKs = params_.largeKs;
-		VectorRealType barEpsilon(largeKs);
+		SizeType norb = params_.orbitals;
+		VectorRealType barEpsilon(largeKs*norb*norb);
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
@@ -124,12 +128,19 @@ public:
 	void makeGf(FreqEnum freqEnum)
 	{
 		VectorType gckf(omegaSize(freqEnum));
-		SizeType largeKs = params_.largeKs;
+		SizeType Nc = params_.largeKs;
+		SizeType norb = params_.orbitals;
 
-		for (SizeType k = 0; k < largeKs; ++k) {
-			makeGf(gckf,k,freqEnum);
-			for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex)
-				gckfsc_(omegaIndex,k) = gckf[omegaIndex]/(1.0+sigma_(omegaIndex,k)*gckf[omegaIndex]);
+		for (SizeType k = 0; k < Nc; ++k) {
+			for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
+				for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
+					SizeType index = k+gamma1*Nc+gamma2*Nc*norb;
+					makeGf(gckf,k,gamma1,gamma2,freqEnum);
+					for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
+						gckfsc_(omegaIndex,index) = gckf[omegaIndex]/(1.0+sigma_(omegaIndex,index)*gckf[omegaIndex]);
+					}
+				}
+			}
 		}
 	}
 
@@ -163,15 +174,19 @@ public:
 
 private:
 
-	void makeGf(VectorType& gckf,SizeType K,FreqEnum freqEnum)
+	void makeGf(VectorType& gckf, SizeType K, SizeType gamma1, SizeType gamma2, FreqEnum freqEnum)
 	{
 		SizeType meshPoints = geometry_.sizeOfMesh();
+		SizeType norb = params_.orbitals;
+		SizeType Nc = params_.largeKs;
+		SizeType index = K+gamma1*Nc+gamma2*Nc*norb;
+
 		for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
 			gckf[omegaIndex] = 0.0;
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
-				ComplexType tmp = -dispersion_(K,ktilde) + params_.mu
+				ComplexType tmp = -dispersion_(K,gamma1,gamma2,ktilde) + params_.mu
 				                                         + omegaValue(omegaIndex,freqEnum)
-				                                         - sigma_(omegaIndex,K);
+				                                         - sigma_(omegaIndex,index);
 				gckf[omegaIndex] += 1.0/tmp;
 			}
 
@@ -204,13 +219,18 @@ private:
 		SizeType meshPoints = geometry_.sizeOfMesh();
 		SizeType largeKs = params_.largeKs;
 		assert(barEpsilon.size() == largeKs);
+		SizeType norb = params_.orbitals;
 
 		for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
-			barEpsilon[bigK] = 0.0;
-			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
-				barEpsilon[bigK] += dispersion_(bigK,ktilde);
+			for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
+				for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
+					SizeType index = bigK + gamma1*largeKs + gamma2*largeKs*norb;
+					barEpsilon[index] = 0.0;
+					for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde)
+						barEpsilon[index] += dispersion_(bigK,gamma1,gamma2,ktilde);
+					barEpsilon[index] /= meshPoints;
+				}
 			}
-			barEpsilon[bigK] /= meshPoints;
 		}
 	}
 

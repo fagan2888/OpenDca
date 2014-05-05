@@ -12,6 +12,7 @@ struct DcaParameters {
 	template<typename SomeInputType>
 	DcaParameters(SomeInputType& io)
 	{
+		io.readline(orbitals,"Orbitals=");
 		io.readline(nofPointsInBathPerClusterPoint,"BathSitesPerSite=");
 		io.readline(electronsUp,"TargetElectronsUp");
 		io.readline(electronsDown,"TargetElectronsDown");
@@ -36,6 +37,7 @@ struct DcaParameters {
 	SizeType smallKs;
 	SizeType numberOfMatsubaras;
 	SizeType nofPointsInBathPerClusterPoint;
+	SizeType orbitals;
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;
