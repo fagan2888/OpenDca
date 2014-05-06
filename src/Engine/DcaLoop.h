@@ -25,6 +25,8 @@ public:
 	                    SizeType gamma2,
 	                    SizeType fineIndex) const
 	{
+		if (gamma1 != gamma2) return 0.0;
+
 		VectorRealType kvector(geometry_.dimension());
 		geometry_.index2Kvector(coarseIndex,kvector);
 

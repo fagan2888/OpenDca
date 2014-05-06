@@ -2,8 +2,8 @@
 #define ANDERSON_FIT_H
 #include "Vector.h"
 #include "String.h"
-#include "RandomForTests.h"
-#include "Minimizer.h"
+#include "MersenneTwister.h"
+#include "MultiMin.h"
 
 namespace OpenDca {
 
@@ -11,12 +11,13 @@ namespace OpenDca {
 template<class ComplexType,typename ParametersType>
 class AndersonDistance
 {
-	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
-	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
+	typedef typename PsimagLite::Real<ComplexType>::Type RealType_;
+	typedef typename PsimagLite::Vector<RealType_>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
 
 public:
 
+	typedef RealType_ RealType;
 	typedef RealType FieldType;
 
 	AndersonDistance(const ParametersType& params,const VectorType& gf)
@@ -82,9 +83,9 @@ class AndersonFit {
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
-	typedef PsimagLite::RandomForTests<RealType> RngType;
+	typedef PsimagLite::MersenneTwister RngType;
 	typedef AndersonDistance<ComplexType,ParametersType> AndersonDistanceType;
-	typedef PsimagLite::Minimizer<RealType,AndersonDistanceType> MinimizerType;
+	typedef PsimagLite::MultiMin<AndersonDistanceType> MinimizerType;
 
 public:
 
@@ -98,6 +99,8 @@ public:
 	void fit(VectorRealType& p,const VectorType& Gf,RealType integral)
 	{
 		bool converged = false;
+
+		std::cout<<"AndersonFit fit with integral "<<integral<<"\n";
 
 		 for (RealType tolerance=1e-6;tolerance<1e-3;tolerance *=10) {
 			std::fill(p.begin(), p.end(), 0.0);
@@ -137,7 +140,7 @@ private:
 			for (SizeType k=p.size()/2;k<p.size();++k)
 				p[k] = rng_();
 
-			err=minimizer.simplex(p,delta,tolerance);
+			err=minimizer.conjugateFr(p,delta,tolerance);
 
 			if (err > 0) break;
 		}
