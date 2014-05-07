@@ -28,7 +28,7 @@ public:
 			matsubaras_[i]=(2.0*(i-nwn)+1.0)*M_PI/params_.beta;
 	}
 
-	RealType operator()(RealType* data, SizeType n1)
+	RealType operator()(const RealType* data, SizeType n1) const
 	{
 		fillVector(data,n1);
 		RealType tmp=0.0;
@@ -46,11 +46,42 @@ public:
 		return tmp;
 	}
 
+	RealType function(const RealType* data, SizeType n1) const
+	{
+		return operator()(data,n1);
+	}
+
+	void gradient(RealType* result,
+	              SizeType n0,
+	              const RealType* data,
+	              SizeType n1) const
+	{
+		fillVector(data,n1);
+		assert(n0 == n1);
+		SizeType totaln=matsubaras_.size();
+
+		for (SizeType i = 0; i < n1; ++i) {
+			RealType tmp=0.0;
+			for (SizeType n=0;n<totaln;++n) {
+				ComplexType ctmp = gf_[n];
+				ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
+				ComplexType tmp2 = ctmp - ctmp2;
+				ComplexType g0Gradient = andersonG0gradient(p_,matsubaras_[n],params_.mu,i);
+				tmp += (std::real(tmp2) * std::real(g0Gradient) +
+				        std::imag(tmp2) * std::imag(g0Gradient));
+			}
+
+			tmp *= -2.0;
+			tmp /= static_cast<RealType>(totaln+1.0);
+			result[i] = tmp;
+		}
+	}
+
 	SizeType size() const { return 2*params_.nofPointsInBathPerClusterPoint; }
 
 private:
 
-	void fillVector(RealType* data, SizeType n)
+	void fillVector(const RealType* data, SizeType n) const
 	{
 		if (p_.size() != n) p_.resize(n);
 
@@ -59,7 +90,7 @@ private:
 	}
 
 	// This is the function that defines the fitting
-	ComplexType andersonG0(const VectorRealType& p,RealType wn,RealType mu)
+	ComplexType andersonG0(const VectorRealType& p,RealType wn,RealType mu) const
 	{
 		SizeType n = static_cast<SizeType>(p.size()/2);
 		ComplexType ctmp=0;
@@ -70,10 +101,25 @@ private:
 		return ctmp;
 	}
 
+	// This is the function that defines the fitting
+	ComplexType andersonG0gradient(const VectorRealType& p,
+	                               RealType wn,
+	                               RealType mu,
+	                               SizeType ind) const
+	{
+		SizeType n = static_cast<SizeType>(p.size()/2);
+
+		if (ind < n) return 2.0*p[ind]/ComplexType(-p[ind+n],wn);
+
+		SizeType ind2 = ind - n;
+		ComplexType ctmp = ComplexType(-p[ind],wn);
+		return p[ind2]*p[ind2]/(ctmp*ctmp);
+	}
+
 	const ParametersType& params_;
 	const VectorType& gf_;
 	VectorRealType matsubaras_;
-	VectorRealType p_;
+	mutable VectorRealType p_;
 };
 
 template<typename VectorType,typename ParametersType>
@@ -102,7 +148,7 @@ public:
 
 		std::cout<<"AndersonFit fit with integral "<<integral<<"\n";
 
-		 for (RealType tolerance=1e-6;tolerance<1e-3;tolerance *=10) {
+		 for (RealType tolerance=1e-6;tolerance<1000;tolerance *=10) {
 			std::fill(p.begin(), p.end(), 0.0);
 			int err = aux(p,Gf,tolerance,integral);
 			if (err > 0) {
@@ -127,23 +173,19 @@ private:
 	// p[n] to p[2n-1] contains e_p
 	int aux(VectorRealType& p,const VectorType& Gf,RealType tolerance,RealType integral)
 	{
-		SizeType maxIter = 1000;
-		RealType delta = 1e-3;
+		SizeType maxIter = 10000;
+		RealType delta = 1e-4;
+		RealType maxGradient = 1.0;
 		AndersonDistanceType andersonDistance(params_,Gf);
-		MinimizerType minimizer(andersonDistance,maxIter);
-		int err = 1;
+		MinimizerType minimizer(andersonDistance,maxIter,maxGradient);
 
-		for (SizeType i=0;i<20;++i) {
-			for (SizeType k=0;k<p.size()/2;++k)
-				p[k]=2.0*fabs(integral)/(M_PI*p.size());
+		for (SizeType k=0;k<p.size()/2;++k)
+			p[k]=2.0*fabs(integral)/(M_PI*p.size());
 
-			for (SizeType k=p.size()/2;k<p.size();++k)
-				p[k] = rng_();
+		for (SizeType k=p.size()/2;k<p.size();++k)
+			p[k] = 0;
 
-			err=minimizer.conjugateFr(p,delta,tolerance);
-
-			if (err > 0) break;
-		}
+		int err=minimizer.conjugateFr(p,delta,tolerance);
 
 		if (err > 0) {
 			std::cerr<<"getAndersonParameters: converged after ";
