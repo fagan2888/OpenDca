@@ -75,7 +75,6 @@ public:
 		io_.read(originalV,"potentialV");
 
 		SizeType clusterSize = params_.largeKs * params_.orbitals;
-		SizeType clusterSize2 = clusterSize * clusterSize;
 
 		for (SizeType i=0;i<total;++i) {
 			SizeType ind = dcaIndexToDmrgIndex(i);
@@ -97,12 +96,15 @@ public:
 				} else if (i>=clusterSize && j>=clusterSize) { //we're in the bath
 					getBathPoint(r,alpha,i,clusterSize,nBath*params_.orbitals);
 					getBathPoint(r2,alpha2,j,clusterSize,nBath*params_.orbitals);
-					if (alpha==alpha2 && r!=r2)
-						hubbardParams_.hoppings(ind,jnd)
-						=std::real(lambda[r+r2*clusterSize+alpha*clusterSize2]);
-					if (alpha==alpha2 && r==r2)
+
+					if (alpha==alpha2 && r!=r2) {
+						hubbardParams_.hoppings(ind,jnd) = lambdaCorrected(lambda,r,r2,alpha);
+					}
+
+					if (alpha==alpha2 && r==r2) {
 						hubbardParams_.potentialV[ind]=hubbardParams_.potentialV[ind+total]
-						=std::real(lambda[r+r*clusterSize+alpha*clusterSize2]);
+						= lambdaCorrected(lambda,r,r2,alpha);
+					}
 				}
 			}
 		}
@@ -258,6 +260,19 @@ private:
 		assert(clusterNoOrbital < params_.largeKs);
 		SizeType index = clusterNoOrbital+clusterNoOrbital*params_.largeKs+gamma*largeKs2;
 		return std::real(tBathCluster_(bathSite,index));
+	}
+
+	RealType lambdaCorrected(const VectorType& lambda,
+	                         SizeType ind,
+	                         SizeType jnd,
+	                         SizeType alpha) const
+	{
+		SizeType csno1 = static_cast<SizeType>(ind/params_.orbitals);
+		SizeType csno2 = static_cast<SizeType>(jnd/params_.orbitals);
+		SizeType largeKs2 = params_.largeKs * params_.largeKs;
+		SizeType index = csno1 + csno2*params_.largeKs + alpha* largeKs2;
+		assert(index < lambda.size());
+		return std::real(lambda[index]);
 	}
 
 	SizeType clusterIndexDcaToDmrg(SizeType ind,SizeType ly) const
