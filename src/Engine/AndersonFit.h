@@ -183,7 +183,7 @@ private:
 			p[k]=2.0*fabs(integral)/(M_PI*p.size());
 
 		for (SizeType k=p.size()/2;k<p.size();++k)
-			p[k] = 0;
+			p[k] = rng_();
 
 		int err=minimizer.conjugateFr(p,delta,tolerance);
 

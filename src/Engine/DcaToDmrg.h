@@ -57,9 +57,8 @@ public:
 	   lastTermSeen_(0),
 	   connectorsCounter_(0)
 	{
-		SizeType Nc=params_.largeKs;
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
-		SizeType total=Nc*(1+nBath);
+		SizeType total=params_.largeKs*(1+nBath)*params_.orbitals;
 
 		// FIXME: CHECK THAT tcluster and tBath have no diagonals
 
@@ -75,30 +74,35 @@ public:
 		VectorRealType originalV(2*total);
 		io_.read(originalV,"potentialV");
 
+		SizeType clusterSize = params_.largeKs * params_.orbitals;
+		SizeType clusterSize2 = clusterSize * clusterSize;
+
 		for (SizeType i=0;i<total;++i) {
 			SizeType ind = dcaIndexToDmrgIndex(i);
 			for (SizeType j=0;j<total;++j) {
 				SizeType jnd = dcaIndexToDmrgIndex(j);
 				//hubbardParams_.exchangeJ(i,j)=0.0;
 				hubbardParams_.hoppings(ind,jnd)=0.0;
-				if (i<params_.largeKs && j<params_.largeKs) { //we're in the cluster
+				if (i<clusterSize && j<clusterSize) { //we're in the cluster
 					hubbardParams_.hoppings(ind,jnd)=std::real(tCluster(i,j));
 					if (ind == jnd)
-						hubbardParams_.potentialV[ind] = hubbardParams_.potentialV[ind + total] = originalV[ind];
-				} else if (i<params_.largeKs && j>=params_.largeKs) { // we're inter cluster
-					getBathPoint(r,alpha,j,Nc,nBath);
-					hubbardParams_.hoppings(ind,jnd)=std::real(tBathCluster(alpha,r+i*Nc));
-				} else if (i>=params_.largeKs && j<params_.largeKs) { // we're inter cluster
-					getBathPoint(r,alpha,i,Nc,nBath);
-					hubbardParams_.hoppings(ind,jnd)=std::real(tBathCluster(alpha,j+r*Nc));
-				} else if (i>=params_.largeKs && j>=params_.largeKs) { //we're in the bath
-					getBathPoint(r,alpha,i,Nc,nBath);
-					getBathPoint(r2,alpha2,j,Nc,nBath);
+						hubbardParams_.potentialV[ind] = hubbardParams_.potentialV[ind + total]
+						                               = originalV[ind];
+				} else if (i<clusterSize && j>=clusterSize) { // we're inter cluster
+					getBathPoint(r,alpha,j,clusterSize,nBath*params_.orbitals);
+					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r+i*clusterSize);
+				} else if (i>=clusterSize && j<clusterSize) { // we're inter cluster
+					getBathPoint(r,alpha,i,clusterSize,nBath*params_.orbitals);
+					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,j+r*clusterSize);
+				} else if (i>=clusterSize && j>=clusterSize) { //we're in the bath
+					getBathPoint(r,alpha,i,clusterSize,nBath*params_.orbitals);
+					getBathPoint(r2,alpha2,j,clusterSize,nBath*params_.orbitals);
 					if (alpha==alpha2 && r!=r2)
-						hubbardParams_.hoppings(ind,jnd)=std::real(lambda[r+r2*Nc+alpha*Nc*Nc]);
+						hubbardParams_.hoppings(ind,jnd)
+						=std::real(lambda[r+r2*clusterSize+alpha*clusterSize2]);
 					if (alpha==alpha2 && r==r2)
 						hubbardParams_.potentialV[ind]=hubbardParams_.potentialV[ind+total]
-						                              =std::real(lambda[r+r*Nc+alpha*Nc*Nc]);
+						=std::real(lambda[r+r*clusterSize+alpha*clusterSize2]);
 				}
 			}
 		}
@@ -128,7 +132,7 @@ public:
 	void readline(T& x,PsimagLite::String label)
 	{
 		if (label == "TotalNumberOfSites=") {
-			x = hubbardParams_.hoppings.n_row();
+			x = static_cast<T>(hubbardParams_.hoppings.n_row()/params_.orbitals);
 		} else if (label == "NumberOfTerms=") {
 			x = geometry_.terms();
 		} else if (label == "DegreesOfFreedom=" ||
@@ -163,30 +167,7 @@ public:
 		if (label != "Connectors")
 			unimplemented("read",label);
 
-		std::cerr<<"DcaToDmrg::read hardcoded for 2x2 with 2 bath sites\n";
-		const MatrixRealType& hoppings = hubbardParams_.hoppings;
-
-		if (connectorsCounter_ == 0) {
-			v.resize(2);
-			v[0] = hoppings(4,6);
-			v[1] = hoppings(5,7);
-		} else if (connectorsCounter_ == 1) {
-			v.resize(2);
-			v[0] = hoppings(4,5);
-			v[1] = hoppings(6,7);
-		} else if (connectorsCounter_ == 2) {
-			SizeType total = hoppings.n_row();
-			v.resize(8);
-			for (SizeType i = 0; i < total; ++i) {
-				if (!isInBath(i)) continue;
-				for (SizeType j = 0; j < total; ++j) {
-					if (!isInBath(j)) continue;
-					SizeType handle = geometry_.handle(lastTermSeen_,i,j);
-					assert(handle < v.size());
-					v[handle] = hoppings(i,j);
-				}
-			}
-		}
+		setHoppings(v, hubbardParams_.hoppings);
 
 		connectorsCounter_++;
 		if (connectorsCounter_ > 2) connectorsCounter_ = 0;
@@ -227,6 +208,15 @@ public:
 
 	SizeType dcaIndexToDmrgIndex(SizeType i) const
 	{
+		if (params_.largeKs == 1) {
+			return i;
+		} else {
+			if (params_.orbitals > 1) {
+				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
+				throw PsimagLite::RuntimeError(str);
+			}
+		}
+
 		SizeType Nc = params_.largeKs;
 		SizeType NcOver2 = static_cast<SizeType>(Nc/2);
 		SizeType NcLy = 2;
@@ -250,6 +240,26 @@ public:
 
 private:
 
+	RealType tBathClusterCorrected(SizeType ind, SizeType jnd) const
+	{
+		SizeType bathOrbital = ind % params_.orbitals;
+		SizeType clusterOrbital = jnd %  params_.orbitals;
+		if (bathOrbital != clusterOrbital) return 0.0;
+
+		SizeType clusterSize = params_.largeKs * params_.orbitals;
+		SizeType clusterSite1 = static_cast<SizeType>(jnd/clusterSize);
+		SizeType clusterSite2 = jnd % clusterSize;
+		if (clusterSite1 != clusterSite2) return 0.0;
+
+		SizeType clusterNoOrbital = static_cast<SizeType>(clusterSite1/params_.orbitals);
+		SizeType gamma = clusterSite1 % params_.orbitals;
+		SizeType bathSite = static_cast<SizeType>(ind/params_.orbitals);
+		SizeType largeKs2 = params_.largeKs * params_.largeKs;
+		assert(clusterNoOrbital < params_.largeKs);
+		SizeType index = clusterNoOrbital+clusterNoOrbital*params_.largeKs+gamma*largeKs2;
+		return std::real(tBathCluster_(bathSite,index));
+	}
+
 	SizeType clusterIndexDcaToDmrg(SizeType ind,SizeType ly) const
 	{
 		SizeType dim = geometry_.dimension();
@@ -271,11 +281,15 @@ private:
 		throw PsimagLite::RuntimeError(str);
 	}
 
-	// Formula is i=Nc + Nb*r + alpha, given Nc, Nb and i determines alpha and r
-	void getBathPoint(SizeType& r,SizeType& alpha,SizeType i,SizeType Nc,SizeType nBath) const
+	// Formula is i=clusterSize + Nb*r + alpha, given Nc, Nb and i determines alpha and r
+	void getBathPoint(SizeType& r,
+	                  SizeType& alpha,
+	                  SizeType i,
+	                  SizeType clusterSize,
+	                  SizeType nBath) const
 	{
-		assert(i >= Nc);
-		i-=Nc;
+		assert(i >= clusterSize);
+		i-=clusterSize;
 		r = static_cast<SizeType>(i/nBath);
 		alpha = i-r*nBath;
 	}
@@ -285,6 +299,67 @@ private:
 		bool b = (ind != 4 && ind != 5);
 		b &= (ind != 6 && ind != 7);
 		return b;
+	}
+
+	void setHoppings(VectorRealType& v, const MatrixRealType& hoppings) const
+	{
+		if (params_.largeKs == 1) {
+			setHoppingsDmft(v,hoppings);
+			return;
+		} else {
+			if (params_.orbitals > 1) {
+				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
+				throw PsimagLite::RuntimeError(str);
+			}
+
+			if (geometry_.label(0) != "ladderbath") {
+				PsimagLite::String str("Only ladderbath supported for Nc>1\n");
+				throw PsimagLite::RuntimeError(str);
+			}
+		}
+
+		std::cerr<<"setHoppings: ladderLeg HARDWIRED to 2\n";
+		SizeType ladderLeg = 2;
+		SizeType lx = static_cast<SizeType>(geometry_.numberOfSites()/ladderLeg);
+		SizeType nBath = params_.nofPointsInBathPerClusterPoint;
+		SizeType start = nBath * static_cast<SizeType>(geometry_.numberOfSites()/2);;
+
+		if (connectorsCounter_ == 0) {
+			SizeType cx = 2*(lx-1);
+			v.resize(cx);
+			for (SizeType i = 0; i < cx; i+=2) {
+				v[i] = hoppings(start,start+2);
+				v[i+1] = hoppings(start+1,start+3);
+				start+=2;
+			}
+		} else if (connectorsCounter_ == 1) {
+			SizeType cx = 2*(lx-1);
+			v.resize(cx);
+			for (SizeType i = 0; i < cx; ++i) {
+				v[i] = hoppings(start,start+1);
+				start+=2;
+			}
+		} else if (connectorsCounter_ == 2) {
+			SizeType total = hoppings.n_row();
+			v.resize(total*nBath);
+			for (SizeType i = 0; i < total; ++i) {
+				if (!isInBath(i)) continue;
+				for (SizeType j = 0; j < total; ++j) {
+					if (!isInBath(j)) continue;
+					SizeType handle = geometry_.handle(lastTermSeen_,i,j);
+					assert(handle < v.size());
+					v[handle] = hoppings(i,j);
+				}
+			}
+		}
+	}
+
+	void setHoppingsDmft(VectorRealType& v, const MatrixRealType& hoppings) const
+	{
+		assert(geometry_.label(0) == "star");
+		assert(params_.largeKs == 1);
+
+		throw PsimagLite::RuntimeError("setHoppingsDmft\n");
 	}
 
 	const ParametersType& params_;

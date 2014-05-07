@@ -54,7 +54,7 @@ public:
 	: params_(params),
 	  geometry_(geometry),
 	  io_(io),
-	  p_(2*params_.nofPointsInBathPerClusterPoint*params_.orbitals,params_.largeKs*params_.orbitals),
+	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs*params_.orbitals),
 	  gammaRealFreq_(params_.omegas,params_.largeKs*params_.orbitals),
 	  garbage_(0)
 	{}
@@ -94,8 +94,8 @@ public:
 			saveAndersonParameters(p,j);
 		}
 
-		inversionSymmetry(p_,0,nBath*params_.orbitals);
-		inversionSymmetry(p_,nBath*params_.orbitals,p_.n_row());
+		inversionSymmetry(p_,0,nBath);
+		inversionSymmetry(p_,nBath,p_.n_row());
 
 		std::cout<<"#REALGAMMA\n";
 		std::cout<<gammaRealFreq_.n_row()<<" "<<gammaRealFreq_.n_col()<<"\n";
@@ -171,22 +171,24 @@ private:
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)
 	{
 		SizeType n=src.size();
+		assert(p_.n_row() == n);
 		for (SizeType i=0;i<n;++i) {
 			p_(i,k) = src[i];
 		}
 	}
 
-	DcaToDmrgType* makeHubbardParams(const VectorRealType& ekbar,typename InputNgType::Readable& io)
+	DcaToDmrgType* makeHubbardParams(const VectorRealType& ekbar,
+	                                 typename InputNgType::Readable& io)
 	{
 		SizeType Nc=params_.largeKs;
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		MatrixType tCluster(Nc*params_.orbitals,Nc*params_.orbitals);
-		MatrixType tBathCluster(nBath*params_.orbitals,Nc*Nc*params_.orbitals);
+		MatrixType tBathCluster(nBath,Nc*Nc*params_.orbitals);
 		VectorType lambda(Nc*Nc*nBath*params_.orbitals);
 
 		ft(tCluster,ekbar);
 		ft5(tBathCluster,p_,0);
-		calcBathLambda(lambda,p_,nBath*params_.orbitals);
+		calcBathLambda(lambda,p_,nBath);
 
 		std::cout<<"tCluster\n";
 		std::cout<<tCluster;
@@ -231,7 +233,7 @@ private:
 
 	void ft5(MatrixType& dest,const MatrixType& src,SizeType offset,SizeType gamma) const
 	{
-		SizeType Nc = params_.largeKs; 
+		SizeType Nc = params_.largeKs;
 
 		for (SizeType b=0;b<dest.n_row();++b) { // bath
 			for (SizeType i=0;i<Nc;++i) { //cluster real space
@@ -239,7 +241,8 @@ private:
 					dest(b,i+j*Nc+gamma*Nc*Nc) = 0.0;
 					for (SizeType k=0;k<Nc;++k) { //cluster k-space
 						RealType tmp = krProduct(k,i,j);
-						dest(b,i+j*Nc+gamma*Nc*Nc)+=ComplexType(cos(tmp),sin(tmp))*src(b+offset,k+gamma*Nc);
+						dest(b,i+j*Nc+gamma*Nc*Nc)+=
+						ComplexType(cos(tmp),sin(tmp))*src(b+offset,k+gamma*Nc);
 					}
 
 					dest(b,i+j*Nc+gamma*Nc*Nc)=std::real(dest(b,i+j*Nc+gamma*Nc*Nc))/Nc;
@@ -254,10 +257,13 @@ private:
 			calcBathLambda(lambda,src,offset,gamma);
 	}
 
-	void calcBathLambda(VectorType& lambda,const MatrixType& src,SizeType offset, SizeType gamma) const
+	void calcBathLambda(VectorType& lambda,
+	                    const MatrixType& src,
+	                    SizeType offset,
+	                    SizeType gamma) const
 	{
 		SizeType Nc=params_.largeKs;
-		SizeType nBath = static_cast<SizeType>(0.5*src.n_row()/params_.orbitals);
+		SizeType nBath = static_cast<SizeType>(0.5*src.n_row());
 		assert(lambda.size() == Nc*Nc*nBath*params_.orbitals);
 
 		for (SizeType i=0;i<nBath;i++) { // i is in the bath
@@ -267,7 +273,8 @@ private:
 					lambda[j+s*Nc+ii]=0.0;
 					for (SizeType k=0;k<Nc;k++) { // k is in the cluster (k-space)
 						RealType tmp = krProduct(k,j,s);
-						lambda[j+s*Nc+ii]+= ComplexType(cos(tmp),sin(tmp))*src(i+nBath*gamma+offset,k+gamma*Nc);
+						lambda[j+s*Nc+ii]+=
+						ComplexType(cos(tmp),sin(tmp))*src(i+offset,k+gamma*Nc);
 					}
 
 					lambda[j+s*Nc+ii] /= Nc;
