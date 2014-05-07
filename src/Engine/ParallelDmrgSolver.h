@@ -118,7 +118,7 @@ public:
 
 			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
 				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
-				gf_(run.omegaIndex,siteDmrg + site2Dmrg*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
+				gf_(run.omegaIndex,run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
 			}
 		}
 
