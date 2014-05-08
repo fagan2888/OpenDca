@@ -141,7 +141,10 @@ public:
 		} else if (label == "DegreesOfFreedom=" ||
 		           label == "LadderLeg=" ||
 		           label == "FERMIONSIGN=" ||
-		           label == "DynamicDmrgType=") {
+		           label == "DynamicDmrgType=" ||
+		           label == "TargetElectronsUp=" ||
+		           label == "TargetElectronsDown=" ||
+		           label == "Orbitals=") {
 			io_.readline(x,label);
 		} else if (label == "BathSitesPerSite=") {
 			x = params_.nofPointsInBathPerClusterPoint;
@@ -187,7 +190,8 @@ public:
 		           label == "TSPProductOrSum=" ||
 		           label == "TSPOperator=" ||
 		           label == "CorrectionVectorAlgorithm=" ||
-		           label == "SolverOptions=") {
+		           label == "SolverOptions=" ||
+		           label == "Model=") {
 			io_.readline(x,label);
 		} else {
 			unimplemented("readline",label);
