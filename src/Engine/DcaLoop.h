@@ -110,7 +110,7 @@ public:
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
 		MatrixType gfcluster(params_.omegas,largeKs*largeKs);
-		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs);
+		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs*norb);
 		RealType sigmaNorm = 0;
 
 		for (SizeType i = 0; i < iterations; ++i) {
@@ -314,7 +314,7 @@ private:
 	                   const VectorRealType& epsbar)
 	{
 		MatrixType& sigma = sigma_;
-		MatrixType data(gfCluster.n_row(),params_.largeKs);
+		MatrixType data(gfCluster.n_row(),params_.largeKs*params_.orbitals);
 
 		// transform from real to k space
 		ft4(data,gfCluster,fTCoefsR2K_,params_.largeKs);
@@ -343,8 +343,12 @@ private:
 		for (SizeType i = 0;i < sigma.n_row(); ++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			for (SizeType j=0;j < sigma.n_col(); ++j) {
-				sigma(i,j) = realOmega - epsbar[j] - gammakomega(i,j)
-				                   - static_cast<RealType>(params_.largeKs)/data(i,j);
+				SizeType orb1 = static_cast<SizeType>(j / params_.orbitals);
+				SizeType orb2 = j % params_.orbitals;
+				ComplexType g = (orb1 == orb2) ? gammakomega(i,orb1) : 0.0;
+				ComplexType d = (orb1 == orb2) ? 
+				     static_cast<RealType>(params_.largeKs)/data(i,orb1) : 0.0;
+				sigma(i,j) = realOmega - epsbar[j] - g - d;
 				//if (std::imag(sigma(i,j))>0) sigma(i,j) = std::real(sigma(i,j));
 			}
 		}
@@ -407,7 +411,7 @@ private:
 
 	void getGammaKOmega(MatrixType& gammaFreq,const MatrixType& p,FreqEnum freqEnum)
 	{
-		for (SizeType k=0;k<params_.largeKs;++k) {
+		for (SizeType k=0;k<gammaFreq.n_col();++k) {
 			for (SizeType j=0;j<omegaSize(freqEnum);++j) {
 				ComplexType z = omegaValue(j,freqEnum);
 				gammaFreq(j,k)=andersonG0(p,k,z);
