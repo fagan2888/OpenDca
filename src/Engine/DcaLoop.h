@@ -168,7 +168,7 @@ public:
 		effectiveHamiltonian.build(gammaOmega,ekbar,integral,freqEnum);
 		std::cout<<effectiveHamiltonian;
 
-		throw PsimagLite::RuntimeError("testing\n");
+		//throw PsimagLite::RuntimeError("testing\n");
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";

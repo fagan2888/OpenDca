@@ -75,6 +75,7 @@ public:
 		io_.read(originalV,"potentialV");
 
 		SizeType clusterSize = params_.largeKs * params_.orbitals;
+		SizeType nBathOrbitals = nBath * params_.orbitals;
 
 		for (SizeType i=0;i<total;++i) {
 			SizeType ind = dcaIndexToDmrgIndex(i);
@@ -88,14 +89,14 @@ public:
 						hubbardParams_.potentialV[ind] = hubbardParams_.potentialV[ind + total]
 						                               = originalV[ind];
 				} else if (i<clusterSize && j>=clusterSize) { // we're inter cluster
-					getBathPoint(r,alpha,j,clusterSize,nBath*params_.orbitals);
-					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r+i*clusterSize);
+					getBathPoint(r,alpha,j,clusterSize,nBathOrbitals);
+					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,i);
 				} else if (i>=clusterSize && j<clusterSize) { // we're inter cluster
-					getBathPoint(r,alpha,i,clusterSize,nBath*params_.orbitals);
-					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,j+r*clusterSize);
+					getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
+					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,j);
 				} else if (i>=clusterSize && j>=clusterSize) { //we're in the bath
-					getBathPoint(r,alpha,i,clusterSize,nBath*params_.orbitals);
-					getBathPoint(r2,alpha2,j,clusterSize,nBath*params_.orbitals);
+					getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
+					getBathPoint(r2,alpha2,j,clusterSize,nBathOrbitals);
 
 					if (alpha==alpha2 && r!=r2) {
 						hubbardParams_.hoppings(ind,jnd) = lambdaCorrected(lambda,r,r2,alpha);
@@ -172,17 +173,21 @@ public:
 		setHoppings(v, hubbardParams_.hoppings);
 
 		connectorsCounter_++;
-		if (connectorsCounter_ > 2) connectorsCounter_ = 0;
+		if (connectorsCounter_ >= geometry_.directions(0))
+			connectorsCounter_ = 0;
 	}
 
-	void readline(PsimagLite::String& x,PsimagLite::String label)
+	void readline(PsimagLite::String& x,
+	              PsimagLite::String label,
+	              bool clean = true)
 	{
 		if (label == "GeometryKind=") {
 			x = geometry_.label(lastTermSeen_);
 		} else if (label == "GeometryOptions=" ||
 		           label == "TSPProductOrSum=" ||
 		           label == "TSPOperator=" ||
-		           label == "CorrectionVectorAlgorithm=") {
+		           label == "CorrectionVectorAlgorithm=" ||
+		           label == "SolverOptions=") {
 			io_.readline(x,label);
 		} else {
 			unimplemented("readline",label);
@@ -192,8 +197,14 @@ public:
 	template<typename T>
 	void readMatrix(T& t,PsimagLite::String label)
 	{
+		SizeType nBath = params_.nofPointsInBathPerClusterPoint;
 		if (label == "RAW_MATRIX") {
 			io_.readMatrix(t,label);
+		} else if (label == "Connectors") {
+			setHoppingsDmft(t,hubbardParams_.hoppings);
+			connectorsCounter_++;
+			if (connectorsCounter_ >= nBath)
+				connectorsCounter_ = 0;
 		} else {
 			unimplemented("readMatrix",label);
 		}
@@ -242,23 +253,17 @@ public:
 
 private:
 
-	RealType tBathClusterCorrected(SizeType ind, SizeType jnd) const
+	RealType tBathClusterCorrected(SizeType alpha, SizeType r, SizeType ind) const
 	{
-		SizeType bathOrbital = ind % params_.orbitals;
-		SizeType clusterOrbital = jnd %  params_.orbitals;
+		SizeType bathOrbital = alpha % params_.orbitals;
+		SizeType clusterOrbital = ind %  params_.orbitals;
 		if (bathOrbital != clusterOrbital) return 0.0;
 
-		SizeType clusterSize = params_.largeKs * params_.orbitals;
-		SizeType clusterSite1 = static_cast<SizeType>(jnd/clusterSize);
-		SizeType clusterSite2 = jnd % clusterSize;
-		if (clusterSite1 != clusterSite2) return 0.0;
-
-		SizeType clusterNoOrbital = static_cast<SizeType>(clusterSite1/params_.orbitals);
-		SizeType gamma = clusterSite1 % params_.orbitals;
-		SizeType bathSite = static_cast<SizeType>(ind/params_.orbitals);
+		SizeType csno = static_cast<SizeType>(ind/params_.orbitals);
+		SizeType bathSite = static_cast<SizeType>(alpha/params_.orbitals);
 		SizeType largeKs2 = params_.largeKs * params_.largeKs;
-		assert(clusterNoOrbital < params_.largeKs);
-		SizeType index = clusterNoOrbital+clusterNoOrbital*params_.largeKs+gamma*largeKs2;
+		assert(csno < params_.largeKs);
+		SizeType index = csno + csno*params_.largeKs + clusterOrbital*largeKs2;
 		return std::real(tBathCluster_(bathSite,index));
 	}
 
@@ -319,8 +324,8 @@ private:
 	void setHoppings(VectorRealType& v, const MatrixRealType& hoppings) const
 	{
 		if (params_.largeKs == 1) {
-			setHoppingsDmft(v,hoppings);
-			return;
+			PsimagLite::String str("setHoppings\n");
+			throw PsimagLite::RuntimeError(str);	
 		} else {
 			if (params_.orbitals > 1) {
 				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
@@ -369,12 +374,22 @@ private:
 		}
 	}
 
-	void setHoppingsDmft(VectorRealType& v, const MatrixRealType& hoppings) const
+	template<typename T>
+	void setHoppingsDmft(T& m, const MatrixRealType& hoppings) const
+	{
+		throw PsimagLite::RuntimeError("setHoppingsDmft error\n");
+	}
+
+	void setHoppingsDmft(MatrixRealType& m, const MatrixRealType& hoppings) const
 	{
 		assert(geometry_.label(0) == "star");
 		assert(params_.largeKs == 1);
 
-		throw PsimagLite::RuntimeError("setHoppingsDmft\n");
+		SizeType i = connectorsCounter_ + 1;
+		m.resize(params_.orbitals,params_.orbitals);
+		m.setTo(0.0);
+		for (SizeType orb = 0; orb < params_.orbitals; ++orb)
+			m(orb,orb) = hubbardParams_.hoppings(orb,orb+i*params_.orbitals);
 	}
 
 	const ParametersType& params_;
