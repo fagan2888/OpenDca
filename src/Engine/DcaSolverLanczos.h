@@ -5,7 +5,9 @@
 #include "../../LanczosPlusPlus/src/Engine/DefaultSymmetry.h"
 #include "../../LanczosPlusPlus/src/Engine/InternalProductStored.h"
 #include "../../LanczosPlusPlus/src/Engine/Engine.h"
-#include "../../LanczosPlusPlus/src/Models/HubbardOneOrbital/HubbardOneOrbital.h"
+#include "../../LanczosPlusPlus/src/Engine/ModelBase.h"
+#include "../../LanczosPlusPlus/src/Engine/BasisBase.h"
+#include "../../LanczosPlusPlus/src/Engine/ModelSelector.h"
 #include "DcaSolverBase.h"
 
 namespace OpenDca {
@@ -15,47 +17,36 @@ class DcaSolverLanczos : public DcaSolverBase<DcaToDmrgType, VaryingGeometryType
 
 	typedef typename DcaToDmrgType::RealType RealType;
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
-	typedef LanczosPlusPlus::HubbardOneOrbital<RealType,VaryingGeometryType,DcaToDmrgType> ModelType;
-	typedef typename ModelType::BasisType BasisType;
+	typedef LanczosPlusPlus::ModelBase<RealType,VaryingGeometryType,DcaToDmrgType> ModelType;
+	typedef LanczosPlusPlus::BasisBase<VaryingGeometryType> BasisType;
 	typedef LanczosPlusPlus::DefaultSymmetry<VaryingGeometryType,BasisType> SpecialSymmetryType;
 	typedef LanczosPlusPlus::Engine<ModelType,
 	                                LanczosPlusPlus::InternalProductStored,
 	                                SpecialSymmetryType> EngineType;
-	typedef typename ModelType::ParametersModelType ParametersModelType;
 	typedef std::pair<SizeType,SizeType> PairType;
 
 public:
 
 	typedef DcaSolverBase<DcaToDmrgType, VaryingGeometryType> DcaSolverBaseType;
 	typedef typename DcaSolverBaseType::VectorSizeType VectorSizeType;
-	typedef typename DcaSolverBaseType::ContinuedFractionCollectionType ContinuedFractionCollectionType;
+	typedef typename DcaSolverBaseType::ContinuedFractionCollectionType
+	                                    ContinuedFractionCollectionType;
 	typedef typename DcaSolverBaseType::PlotParamsType PlotParamsType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 
 	DcaSolverLanczos(DcaToDmrgType& myInput,
-	                             const VaryingGeometryType& geometry2,
-	                             typename InputNgType::Readable& io)
-	 : myInput_(myInput),mp_(myInput),model_(0),engine_(0)
+	                 const VaryingGeometryType& geometry2,
+	                 typename InputNgType::Readable& io)
+	 : myInput_(myInput),
+	   modelSelector_(myInput,geometry2),
+	   model_(modelSelector_()),
+	   engine_(model_,geometry2.numberOfSites(),myInput)
 	{
-		SizeType nup = 0;
-		SizeType ndown = 0;
 
-		io.read(nup,"TargetElectronsUp");
-		io.read(ndown,"TargetElectronsDown");
-
-		std::cout<<mp_;
 		std::cout<<geometry2;
-		model_ = new ModelType(nup,ndown,mp_,geometry2);
-		engine_ = new EngineType(*model_,geometry2.numberOfSites(),myInput);
-		RealType Eg = engine_->gsEnergy();
+		RealType Eg = engine_.gsEnergy();
 		std::cout.precision(8);
 		std::cout<<"DcaSolverLanczos::Energy= "<<Eg<<"\n";
-	}
-
-	~DcaSolverLanczos()
-	{
-		delete model_;
-		delete engine_;
 	}
 
 	void solve(MatrixType& gf,const VectorSizeType& sites,const PlotParamsType& plotParams)
@@ -73,10 +64,10 @@ public:
 		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0]<<",j="<<sitesLanczos[1]<<")\n";
 
 		ContinuedFractionCollectionType cfCollection;
-		SizeType norbitals = maxOrbitals(*model_);
+		SizeType norbitals = maxOrbitals(model_);
 		for (SizeType orb1 = 0;orb1 < norbitals; ++orb1) {
 			for (SizeType orb2 = 0;orb2 < norbitals; ++orb2) {
-				engine_->spectralFunction(cfCollection,
+				engine_.spectralFunction(cfCollection,
 				                          gfOp,
 				                          sitesLanczos[0],
 				                          sitesLanczos[1],
@@ -119,9 +110,9 @@ private:
 	}
 
 	DcaToDmrgType& myInput_;
-	ParametersModelType mp_;
-	ModelType* model_;
-	EngineType* engine_;
+	LanczosPlusPlus::ModelSelector<RealType,VaryingGeometryType,DcaToDmrgType> modelSelector_;
+	const ModelType& model_;
+	EngineType engine_;
 };
 }
 
