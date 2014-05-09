@@ -189,10 +189,11 @@ private:
 
 		for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
 			gckf[omegaIndex] = 0.0;
+			if (gamma1 != gamma2) continue;
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
-				ComplexType tmp = -dispersion_(K,gamma1,gamma2,ktilde) + params_.mu
-				                                         + omegaValue(omegaIndex,freqEnum)
-				                                         - sigma_(omegaIndex,index);
+				ComplexType tmp = - dispersion_(K,gamma1,gamma2,ktilde)
+				                  - sigma_(omegaIndex,index);
+				tmp += (params_.mu + omegaValue(omegaIndex,freqEnum));
 				gckf[omegaIndex] += 1.0/tmp;
 			}
 
@@ -243,13 +244,23 @@ private:
 	                   const VectorRealType& ekbar,
 	                   FreqEnum freqEnum)
 	{
+		SizeType norb = params_.orbitals;
+		SizeType largeKs = params_.largeKs;
+
 		for (SizeType j=0;j<gckfsc_.n_col();j++) integral[j]=0.0;
 
 		for (SizeType i=0;i<gckfsc_.n_row();++i) { // loop over freq.
-			ComplexType omega = omegaValue(i,freqEnum); 
-			for (SizeType j=0;j<gckfsc_.n_col();++j) { // loop over k and orbitals
-				deltaOmega(i,j)= omega + params_.mu - ekbar[j] -sigma_(i,j) - 1.0/gckfsc_(i,j);
-				integral[j] += std::imag(deltaOmega(i,j));
+			ComplexType omega = omegaValue(i,freqEnum);
+			for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
+				for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
+					for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
+						SizeType index = bigK + gamma1*largeKs + gamma2*largeKs*norb;
+						deltaOmega(i,index) = 0.0;
+						if (gamma1 != gamma2) continue;
+						deltaOmega(i,index)= omega + params_.mu - ekbar[index] -sigma_(i,index) - 1.0/gckfsc_(i,index);
+						integral[index] += std::imag(deltaOmega(i,index));
+					}
+				}
 			}
 		}
 
@@ -352,8 +363,8 @@ private:
 				ComplexType g = (orb1 == orb2) ? gammakomega(i,jj) : 0.0;
 				ComplexType d = (orb1 == orb2) ? 
 				           static_cast<RealType>(params_.largeKs)/data(i,jj) : 0.0;
-				sigma(i,j) = realOmega - epsbar[j] - g - d;
-				//if (std::imag(sigma(i,j))>0) sigma(i,j) = std::real(sigma(i,j));
+				sigma(i,j) = -epsbar[j];
+				if (orb1 == orb2) sigma(i,j) -= (g + d + params_.mu + realOmega);
 			}
 		}
 
