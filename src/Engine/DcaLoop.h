@@ -109,7 +109,7 @@ public:
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
-		MatrixType gfcluster(params_.omegas,largeKs*largeKs);
+		MatrixType gfcluster(params_.omegas,largeKs*largeKs*params_.orbitals);
 		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs*norb);
 		RealType sigmaNorm = 0;
 
@@ -343,11 +343,15 @@ private:
 		for (SizeType i = 0;i < sigma.n_row(); ++i) {
 			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
 			for (SizeType j=0;j < sigma.n_col(); ++j) {
-				SizeType orb1 = static_cast<SizeType>(j / params_.orbitals);
-				SizeType orb2 = j % params_.orbitals;
-				ComplexType g = (orb1 == orb2) ? gammakomega(i,orb1) : 0.0;
+				// j = clusterK + orb1*largeKs + orb2*largeKs*orbitals
+				SizeType clusterK = j % params_.largeKs;
+				SizeType tmp = static_cast<SizeType>(j/params_.largeKs);
+				SizeType orb1 = static_cast<SizeType>(tmp / params_.orbitals);
+				SizeType orb2 = tmp % params_.orbitals;
+				SizeType jj = clusterK + orb1 * params_.largeKs;
+				ComplexType g = (orb1 == orb2) ? gammakomega(i,jj) : 0.0;
 				ComplexType d = (orb1 == orb2) ? 
-				     static_cast<RealType>(params_.largeKs)/data(i,orb1) : 0.0;
+				           static_cast<RealType>(params_.largeKs)/data(i,jj) : 0.0;
 				sigma(i,j) = realOmega - epsbar[j] - g - d;
 				//if (std::imag(sigma(i,j))>0) sigma(i,j) = std::real(sigma(i,j));
 			}
@@ -380,6 +384,16 @@ private:
 	         const MatrixType& ftCoeffs,
 	         SizeType Nc) const
 	{
+		for (SizeType orb = 0; orb < params_.orbitals; ++orb)
+			ft4(gfdest,gfsource,ftCoeffs,Nc,orb);
+	}
+
+	void ft4(MatrixType& gfdest,
+	         const MatrixType& gfsource,
+	         const MatrixType& ftCoeffs,
+	         SizeType Nc,
+	         SizeType orb) const
+	{
 		ComplexType csum = 0.0;
 
 		for (SizeType ik=0;ik<Nc;ik++) {
@@ -387,8 +401,8 @@ private:
 				csum=0.0;
 				for (SizeType ic=0;ic<Nc;ic++)
 					for (SizeType jc=0;jc<Nc;jc++)
-						csum+= gfsource(n,ic+jc*Nc)*conj(ftCoeffs(ik,ic))*ftCoeffs(ik,jc);
-				gfdest(n,ik)=csum; //! no factor of 1/Nc
+						csum+= gfsource(n,ic+jc*Nc+orb*Nc*Nc)*conj(ftCoeffs(ik,ic))*ftCoeffs(ik,jc);
+				gfdest(n,ik+orb*Nc)=csum; //! no factor of 1/Nc
 			}
 		}
 	}

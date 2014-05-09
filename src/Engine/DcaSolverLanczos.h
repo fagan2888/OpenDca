@@ -63,28 +63,30 @@ public:
 		sitesLanczos[1] = myInput_.dcaIndexToDmrgIndex(sites[1]);
 		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0]<<",j="<<sitesLanczos[1]<<")\n";
 
-		ContinuedFractionCollectionType cfCollection;
 		SizeType norbitals = maxOrbitals(model_);
 		for (SizeType orb1 = 0;orb1 < norbitals; ++orb1) {
-			for (SizeType orb2 = 0;orb2 < norbitals; ++orb2) {
-				engine_.spectralFunction(cfCollection,
-				                          gfOp,
-				                          sitesLanczos[0],
-				                          sitesLanczos[1],
-				                          spins,
-				                          std::pair<SizeType,SizeType>(orb1,orb2));
-			}
+			//for (SizeType orb2 = 0;orb2 < norbitals; ++orb2) {
+			SizeType orb2 = orb1;
+			ContinuedFractionCollectionType cfCollection;
+			engine_.spectralFunction(cfCollection,
+				                 gfOp,
+				                 sitesLanczos[0],
+				                 sitesLanczos[1],
+				                 spins,
+				                 std::pair<SizeType,SizeType>(orb1,orb2));
+			
+			plotAll(gf,sites,orb1,cfCollection,plotParams);
+			//}
 		}
-
-		plotAll(gf,sites,cfCollection,plotParams);
 	}
 
 private:
 
 	void plotAll(MatrixType& gf,
-	                  const VectorSizeType& sites,
-	                  const ContinuedFractionCollectionType& cfCollection,
-	                  const PlotParamsType& plotParams) const
+	             const VectorSizeType& sites,
+	             SizeType orb,
+	             const ContinuedFractionCollectionType& cfCollection,
+	             const PlotParamsType& plotParams) const
 	{
 		SizeType Nc = gf.n_col();
 		Nc = static_cast<SizeType>(sqrt(Nc));
@@ -95,7 +97,7 @@ private:
 		assert(gf.n_row() <= v.size());
 		assert(sites[0] + sites[1]*Nc < gf.n_col());
 		for (SizeType x = 0; x < gf.n_row(); ++x)
-			gf(x,sites[0] + sites[1]*Nc) = v[x].second;
+			gf(x,sites[0] + sites[1]*Nc + orb*Nc*Nc) = v[x].second;
 	}
 
 	template<typename SomeLanczosModelType>

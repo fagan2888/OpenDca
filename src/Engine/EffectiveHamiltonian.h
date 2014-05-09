@@ -139,9 +139,9 @@ public:
 		RealType omegaEnd = params_.omegas * params_.omegaStep + params_.omegaBegin;
 
 		PlotParamsType plotParams(params_.omegaBegin,
-		                                            omegaEnd,
-		                                            params_.omegaStep,
-		                                            params_.delta);
+		                          omegaEnd,
+		                          params_.omegaStep,
+		                          params_.delta);
 
 		SizeType Nc = params_.largeKs;
 		VectorSizeType sites(2);
@@ -153,10 +153,12 @@ public:
 			}
 		}
 
-		for (SizeType i = 0; i < Nc; ++i)
-			for (SizeType j = 0; j < i; ++j)
-				for (SizeType x = 0; x < gfCluster.n_row(); ++x)
-					gfCluster(x,i+j*Nc) = gfCluster(x,j+i*Nc);
+		for (SizeType orb = 0; orb< params_.orbitals; ++orb)
+			for (SizeType i = 0; i < Nc; ++i)
+				for (SizeType j = 0; j < i; ++j)
+					for (SizeType x = 0; x < gfCluster.n_row(); ++x)
+						gfCluster(x,i+j*Nc+orb*Nc*Nc) =
+						          gfCluster(x,j+i*Nc+orb*Nc*Nc);
 
 		delete solver;
 	}
