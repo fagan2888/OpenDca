@@ -344,9 +344,9 @@ private:
 
 		std::cerr<<"setHoppings: ladderLeg HARDWIRED to 2\n";
 		SizeType ladderLeg = 2;
-		SizeType lx = static_cast<SizeType>(geometry_.numberOfSites()/ladderLeg);
+		SizeType lx = static_cast<SizeType>(params_.largeKs/ladderLeg);
 		SizeType nBath = params_.nofPointsInBathPerClusterPoint;
-		SizeType start = nBath * static_cast<SizeType>(geometry_.numberOfSites()/2);;
+		SizeType start = nBath * static_cast<SizeType>(params_.largeKs/2);;
 
 		if (connectorsCounter_ == 0) {
 			SizeType cx = 2*(lx-1);
@@ -365,7 +365,7 @@ private:
 			}
 		} else if (connectorsCounter_ == 2) {
 			SizeType total = hoppings.n_row();
-			v.resize(total*nBath);
+			v.resize(params_.largeKs*nBath);
 			for (SizeType i = 0; i < total; ++i) {
 				if (!isInBath(i)) continue;
 				for (SizeType j = 0; j < total; ++j) {

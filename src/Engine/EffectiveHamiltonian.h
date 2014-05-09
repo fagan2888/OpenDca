@@ -71,27 +71,27 @@ public:
 	           FreqEnum freqEnum)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
+		SizeType largeKs = params_.largeKs;
 
 		VectorRealType p(2*nBath);
 		VectorType gfTmp(gf.n_row());
 		AndersonFitType andersonFit(params_);
 
-		assert(p_.n_col()*p_.n_col() == gf.n_col());
-		for (SizeType j=0;j<p_.n_col();++j) {
-			SizeType jj = j+j*params_.orbitals;
-			// first find Anderson parameters by fitting procedure (min. of distance)
-			std::cout<<"#GFTMP"<<j<<"\n";
-			for (SizeType i=0;i<gf.n_row();++i) {
-				gfTmp[i]=gf(i,jj);
-				std::cout<<i<<" "<<std::real(gfTmp[i])<<" "<<std::imag(gfTmp[i])<<"\n";
+		for (SizeType site = 0; site < largeKs; ++site) {
+			for (SizeType orb = 0; orb < params_.orbitals; ++orb) {
+				SizeType jj = site + orb * largeKs + orb * largeKs * params_.orbitals;
+				std::cout<<"#GFTMP"<<site<<" "<<orb<<"\n";
+				for (SizeType i=0;i<gf.n_row();++i) {
+					gfTmp[i]=gf(i,jj);
+					std::cout<<i<<" "<<std::real(gfTmp[i])<<" "<<std::imag(gfTmp[i])<<"\n";
+				}
+
+				andersonFit.fit(p,gfTmp,integral[jj]);
+				std::cout<<"#PANDERSON"<<site<<" "<<orb<<"\n";
+				for (SizeType i=0;i<p.size();++i) std::cout<<i<<" "<<p[i]<<"\n";
+
+				saveAndersonParameters(p,site + orb*largeKs);
 			}
-
-			andersonFit.fit(p,gfTmp,integral[jj]);
-			std::cout<<"#PANDERSON"<<j<<"\n";
-			for (SizeType i=0;i<p.size();++i) std::cout<<i<<" "<<p[i]<<"\n";
-
-			// save Anderson parameters for this j of the cluster
-			saveAndersonParameters(p,j);
 		}
 
 		inversionSymmetry(p_,0,nBath);
@@ -174,6 +174,7 @@ private:
 	{
 		SizeType n=src.size();
 		assert(p_.n_row() == n);
+		assert(k < p_.n_col());
 		for (SizeType i=0;i<n;++i) {
 			p_(i,k) = src[i];
 		}
