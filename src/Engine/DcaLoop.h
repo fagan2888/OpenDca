@@ -139,7 +139,8 @@ public:
 					SizeType index = k+gamma1*Nc+gamma2*Nc*norb;
 					makeGf(gckf,k,gamma1,gamma2,freqEnum);
 					for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
-						gckfsc_(omegaIndex,index) = gckf[omegaIndex]/(1.0+sigma_(omegaIndex,index)*gckf[omegaIndex]);
+						gckfsc_(omegaIndex,index) = gckf[omegaIndex]/
+						              (1.0+sigma_(omegaIndex,index)*gckf[omegaIndex]);
 					}
 				}
 			}
@@ -172,7 +173,7 @@ public:
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
-		
+
 		const MatrixType& p = effectiveHamiltonian.andersonParameters();
 
 		getGammaKOmega(gammaOmegaRealOrImag,p,freqEnum);
@@ -203,7 +204,6 @@ private:
 
 	ComplexType omegaValue(SizeType omegaIndex,FreqEnum freqEnum) const
 	{
-		
 		if (freqEnum == FREQ_REAL)
 			return ComplexType(params_.omegaBegin + params_.omegaStep * omegaIndex,params_.delta);
 		else
@@ -257,7 +257,9 @@ private:
 						SizeType index = bigK + gamma1*largeKs + gamma2*largeKs*norb;
 						deltaOmega(i,index) = 0.0;
 						if (gamma1 != gamma2) continue;
-						deltaOmega(i,index)= omega + params_.mu - ekbar[index] -sigma_(i,index) - 1.0/gckfsc_(i,index);
+						assert(std::norm(gckfsc_(i,index)) > 1e-20);
+						deltaOmega(i,index)= omega + params_.mu - ekbar[index]
+						               -sigma_(i,index) - 1.0/gckfsc_(i,index);
 						integral[index] += std::imag(deltaOmega(i,index));
 					}
 				}
@@ -361,7 +363,7 @@ private:
 				SizeType orb2 = tmp % params_.orbitals;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
 				ComplexType g = (orb1 == orb2) ? gammakomega(i,jj) : 0.0;
-				ComplexType d = (orb1 == orb2) ? 
+				ComplexType d = (orb1 == orb2) ?
 				           static_cast<RealType>(params_.largeKs)/data(i,jj) : 0.0;
 				sigma(i,j) = -epsbar[j];
 				if (orb1 == orb2) sigma(i,j) -= (g + d + params_.mu + realOmega);
@@ -412,7 +414,8 @@ private:
 				csum=0.0;
 				for (SizeType ic=0;ic<Nc;ic++)
 					for (SizeType jc=0;jc<Nc;jc++)
-						csum+= gfsource(n,ic+jc*Nc+orb*Nc*Nc)*conj(ftCoeffs(ik,ic))*ftCoeffs(ik,jc);
+						csum+= gfsource(n,ic+jc*Nc+orb*Nc*Nc)*
+						      conj(ftCoeffs(ik,ic))*ftCoeffs(ik,jc);
 				gfdest(n,ik+orb*Nc)=csum; //! no factor of 1/Nc
 			}
 		}
@@ -448,11 +451,12 @@ private:
 	{
 		SizeType n=static_cast<SizeType>(p.n_row()/2);
 		ComplexType ctmp=0.0;
-		
-		for (SizeType i=0;i<n;++i) ctmp += std::conj(p(i,k))*p(i,k)/(-p(i+n,k)+z);
-		
+
+		for (SizeType i=0;i<n;++i)
+			ctmp += std::conj(p(i,k))*p(i,k)/(-p(i+n,k)+z);
+
 		return ctmp;
-        }
+	}
 
 	const ParametersType& params_;
 	typename InputNgType::Readable& io_;

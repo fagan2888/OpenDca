@@ -20,16 +20,18 @@ struct DcaParameters {
 		io.readline(omegas,"DcaOmegaTotal=");
 		io.readline(omegaStep,"DcaOmegaStep=");
 		io.readline(largeKs,"DcaLargeKs=");
-		io.readline(numberOfMatsubaras,"DcaNumberOfMatsubaras=");
+		numberOfMatsubaras = omegas;
 		io.readline(smallKs,"DcaFinePoints=");
 		io.readline(beta,"DcaBeta=");
 		io.readline(mu,"DcaMu=");
 		io.readline(delta,"DcaDelta=");
 		io.readline(dcaSolver,"DcaSolver=");
-		io.readline(iterations,"DcaIterations=");
+		io.readline(imagIterations,"DcaMatsubaraIterations=");
+		io.readline(realIterations,"DcaRealFreqIterations=");
 	}
 
-	SizeType iterations;
+	SizeType imagIterations;
+	SizeType realIterations;
 	SizeType electronsUp;
 	SizeType electronsDown;
 	SizeType omegas;

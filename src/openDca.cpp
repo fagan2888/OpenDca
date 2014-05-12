@@ -50,6 +50,8 @@ int main(int argc, char *argv[])
 	ParametersType params(io);
 	DcaLoopType dcaLoop(params,io);
 
-	dcaLoop.main(OpenDca::FREQ_REAL,params.iterations);
+	dcaLoop.main(OpenDca::FREQ_MATSUBARA,params.imagIterations);
+
+	dcaLoop.main(OpenDca::FREQ_REAL,params.realIterations);
 }
 
