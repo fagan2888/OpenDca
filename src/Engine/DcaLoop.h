@@ -119,7 +119,10 @@ public:
 			std::cout<<"gfcluster\n";
 			std::cout<<gfcluster;
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = makeSigma(gfcluster,gammaOmegaRealOrImag,barEpsilon);
+			sigmaNorm = makeSigma(gfcluster,
+			                      gammaOmegaRealOrImag,
+			                      barEpsilon,
+			                      freqEnum);
 			dcaError -= sigmaNorm;
 			std::cout<<"sigma\n";
 			std::cout<<sigma_;
@@ -290,21 +293,7 @@ private:
 			return;
 		}
 
-		RealType factor = -params_.omegaStep/M_PI;
-
-		for (SizeType i=0;i<params_.numberOfMatsubaras;++i) {
-			RealType wn = matsubara(i);
-
-			for (SizeType k=0;k<deltaOmega.n_col();++k) {
-				ComplexType sum = 0.0;
-				for (SizeType j=0;j<deltaOmega.n_row();++j) {
-					RealType realOmega = params_.omegaBegin + params_.omegaStep * j;
-					sum += factor * std::imag(deltaOmega(j,k))/ComplexType(-realOmega,wn);
-				}
-
-				gammaOmega(i,k) = sum;
-			}
-		}
+		hilbertTransfFromReal(gammaOmega,deltaOmega);
 
 		std::cout<<"#GAMMA\n";
 		for (SizeType i=0;i<gammaOmega.n_row();++i) {
@@ -316,6 +305,26 @@ private:
 		}
 	}
 
+	void hilbertTransfFromReal(MatrixType& imagOmega,
+	                           const MatrixType& realOmega)
+	{
+		RealType factor = -params_.omegaStep/M_PI;
+
+		for (SizeType i=0;i<params_.numberOfMatsubaras;++i) {
+			RealType wn = matsubara(i);
+
+			for (SizeType k=0;k<realOmega.n_col();++k) {
+				ComplexType sum = 0.0;
+				for (SizeType j=0;j<realOmega.n_row();++j) {
+					RealType rOmega = params_.omegaBegin + params_.omegaStep * j;
+					sum += factor * std::imag(realOmega(j,k))/ComplexType(-rOmega,wn);
+				}
+
+				imagOmega(i,k) = sum;
+			}
+		}
+	}
+
 	RealType matsubara(int ind) const
 	{
 		int halfNs = static_cast<int>(params_.numberOfMatsubaras*0.5);
@@ -324,7 +333,8 @@ private:
 
 	RealType makeSigma(const MatrixType& gfCluster,
 	                   const MatrixType& gammakomega,
-	                   const VectorRealType& epsbar)
+	                   const VectorRealType& epsbar,
+	                   FreqEnum freqEnum)
 	{
 		MatrixType& sigma = sigma_;
 		MatrixType data(gfCluster.n_row(),params_.largeKs*params_.orbitals);
@@ -344,17 +354,23 @@ private:
 			std::cout<<"\n";
 		}
 
+		MatrixType data2(data.n_row(),data.n_col());
+		if (freqEnum == FREQ_MATSUBARA)
+			hilbertTransfFromReal(data2,data);
+		else
+			data2 = data;
+
 		std::cout<<"#ONEOVERDATA\n";
 		for (SizeType i = 0;i < data.n_row(); ++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
+			ComplexType omega = omegaValue(i,freqEnum);
+			std::cout<<omega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j)
 				std::cout<<1.0/data(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
 		for (SizeType i = 0;i < sigma.n_row(); ++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
+			ComplexType omega = omegaValue(i,freqEnum);
 			for (SizeType j=0;j < sigma.n_col(); ++j) {
 				// j = clusterK + orb1*largeKs + orb2*largeKs*orbitals
 				SizeType clusterK = j % params_.largeKs;
@@ -366,15 +382,15 @@ private:
 				ComplexType d = (orb1 == orb2) ?
 				           static_cast<RealType>(params_.largeKs)/data(i,jj) : 0.0;
 				sigma(i,j) = -epsbar[j];
-				if (orb1 == orb2) sigma(i,j) -= (g + d + params_.mu + realOmega);
+				if (orb1 == orb2) sigma(i,j) -= (g + d - params_.mu - omega);
 			}
 		}
 
 		std::cout<<"#SIGMA\n";
 		std::cout<<sigma.n_row()<<" "<<sigma.n_col()<<"\n";
 		for (SizeType i=0;i<sigma.n_row();++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
+			ComplexType omega = omegaValue(i,freqEnum);
+			std::cout<<omega<<" ";
 			for (SizeType j=0;j<sigma.n_col();j++) std::cout<<sigma(i,j)<<" ";
 			std::cout<<"\n";
 		}
@@ -445,6 +461,9 @@ private:
 				gammaFreq(j,k)=andersonG0(p,k,z);
 			}
 		}
+
+		std::cout<<"#gammaFreq\n";
+		std::cout<<gammaFreq;
 	}
 
 	ComplexType andersonG0(const MatrixType& p, SizeType k,ComplexType z) const
