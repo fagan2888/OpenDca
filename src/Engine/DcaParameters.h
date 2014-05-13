@@ -28,6 +28,11 @@ struct DcaParameters {
 		io.readline(dcaSolver,"DcaSolver=");
 		io.readline(imagIterations,"DcaMatsubaraIterations=");
 		io.readline(realIterations,"DcaRealFreqIterations=");
+		try {
+			io.read(potentialV,"potentialV");
+		} catch (std::exception& e) {
+			std::cerr<<"DcaParameters: No potentialV found\n";
+		}
 	}
 
 	SizeType imagIterations;
@@ -46,6 +51,7 @@ struct DcaParameters {
 	RealType mu;
 	RealType delta;
 	PsimagLite::String dcaSolver;
+	typename PsimagLite::Vector<RealType>::Type potentialV;
 }; // struct DcaParameters
 
 }

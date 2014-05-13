@@ -36,7 +36,8 @@ public:
 		for (SizeType i=0;i<kvector.size();++i)
 			kvector[i] += kvector2[i];
 
-		return getDispersion(kvector);
+		return getDispersion(kvector)
+		       + onSitePotential(coarseIndex,gamma1,gamma2);
 	}
 
 private:
@@ -50,6 +51,14 @@ private:
 			kplus += cos(kvector[k]);
 
 		return -2.0 * kplus;
+	}
+
+	RealType onSitePotential(SizeType K, SizeType gamma1, SizeType gamma2) const
+	{
+		if (gamma1 != gamma2) return 0;
+		SizeType index = K + gamma1*geometry_.numberOfSites();
+		assert(index< params_.potentialV.size());
+		return params_.potentialV[index];
 	}
 
 	const ParamsType& params_;
@@ -116,7 +125,7 @@ public:
 		for (SizeType i = 0; i < iterations; ++i) {
 			makeGf(freqEnum);
 			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
-			std::cout<<"gfcluster\n";
+			std::cout<<"#gfcluster\n";
 			std::cout<<gfcluster;
 			RealType dcaError = sigmaNorm;
 			sigmaNorm = makeSigma(gfcluster,
@@ -149,7 +158,7 @@ public:
 			}
 		}
 
-		std::cout<<"GCKFSC\n";
+		std::cout<<"#GCKFSC\n";
 		std::cout<<gckfsc_;
 	}
 
@@ -184,7 +193,11 @@ public:
 
 private:
 
-	void makeGf(VectorType& gckf, SizeType K, SizeType gamma1, SizeType gamma2, FreqEnum freqEnum)
+	void makeGf(VectorType& gckf,
+	            SizeType K,
+	            SizeType gamma1,
+	            SizeType gamma2,
+	            FreqEnum freqEnum)
 	{
 		SizeType meshPoints = geometry_.sizeOfMesh();
 		SizeType norb = params_.orbitals;
@@ -208,7 +221,8 @@ private:
 	ComplexType omegaValue(SizeType omegaIndex,FreqEnum freqEnum) const
 	{
 		if (freqEnum == FREQ_REAL)
-			return ComplexType(params_.omegaBegin + params_.omegaStep * omegaIndex,params_.delta);
+			return ComplexType(params_.omegaBegin + params_.omegaStep*omegaIndex,
+			                   params_.delta);
 		else
 			return ComplexType(0, matsubara(omegaIndex));
 	}
@@ -360,12 +374,15 @@ private:
 		else
 			data2 = data;
 
-		std::cout<<"#ONEOVERDATA\n";
+		std::cout<<"#DATA2\n";
+		std::cout<<data2;
+
+		std::cout<<"#ONEOVERDATA2\n";
 		for (SizeType i = 0;i < data.n_row(); ++i) {
 			ComplexType omega = omegaValue(i,freqEnum);
 			std::cout<<omega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j)
-				std::cout<<1.0/data(i,j)<<" ";
+				std::cout<<1.0/data2(i,j)<<" ";
 			std::cout<<"\n";
 		}
 
@@ -380,20 +397,14 @@ private:
 				SizeType jj = clusterK + orb1 * params_.largeKs;
 				ComplexType g = (orb1 == orb2) ? gammakomega(i,jj) : 0.0;
 				ComplexType d = (orb1 == orb2) ?
-				           static_cast<RealType>(params_.largeKs)/data(i,jj) : 0.0;
+				           static_cast<RealType>(params_.largeKs)/data2(i,jj) : 0.0;
 				sigma(i,j) = -epsbar[j];
 				if (orb1 == orb2) sigma(i,j) -= (g + d - params_.mu - omega);
 			}
 		}
 
 		std::cout<<"#SIGMA\n";
-		std::cout<<sigma.n_row()<<" "<<sigma.n_col()<<"\n";
-		for (SizeType i=0;i<sigma.n_row();++i) {
-			ComplexType omega = omegaValue(i,freqEnum);
-			std::cout<<omega<<" ";
-			for (SizeType j=0;j<sigma.n_col();j++) std::cout<<sigma(i,j)<<" ";
-			std::cout<<"\n";
-		}
+		std::cout<<sigma;
 
 		return calcRealSigma(sigma);
 	}
@@ -475,6 +486,14 @@ private:
 			ctmp += std::conj(p(i,k))*p(i,k)/(-p(i+n,k)+z);
 
 		return ctmp;
+	}
+
+	RealType onSitePotential(SizeType K, SizeType gamma1, SizeType gamma2) const
+	{
+		if (gamma1 != gamma2) return 0;
+		SizeType index = K + gamma1*geometry_.numberOfSites();
+		assert(index< params_.potentialV.size());
+		return params_.potentialV[index];
 	}
 
 	const ParametersType& params_;

@@ -17,9 +17,12 @@ class DcaSolverLanczos : public DcaSolverBase<DcaToDmrgType, VaryingGeometryType
 
 	typedef typename DcaToDmrgType::RealType RealType;
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
-	typedef LanczosPlusPlus::ModelBase<RealType,VaryingGeometryType,DcaToDmrgType> ModelType;
+	typedef LanczosPlusPlus::ModelBase<RealType,
+	                                   VaryingGeometryType,
+	                                   DcaToDmrgType> ModelType;
 	typedef LanczosPlusPlus::BasisBase<VaryingGeometryType> BasisType;
-	typedef LanczosPlusPlus::DefaultSymmetry<VaryingGeometryType,BasisType> SpecialSymmetryType;
+	typedef LanczosPlusPlus::DefaultSymmetry<VaryingGeometryType,
+	                                         BasisType> SpecialSymmetryType;
 	typedef LanczosPlusPlus::Engine<ModelType,
 	                                LanczosPlusPlus::InternalProductStored,
 	                                SpecialSymmetryType> EngineType;
@@ -33,6 +36,7 @@ public:
 	                                    ContinuedFractionCollectionType;
 	typedef typename DcaSolverBaseType::PlotParamsType PlotParamsType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
+	typedef typename MatrixType::value_type ComplexType;
 
 	DcaSolverLanczos(DcaToDmrgType& myInput,
 	                 const VaryingGeometryType& geometry2,
@@ -65,18 +69,16 @@ public:
 
 		SizeType norbitals = maxOrbitals(model_);
 		for (SizeType orb1 = 0;orb1 < norbitals; ++orb1) {
-			//for (SizeType orb2 = 0;orb2 < norbitals; ++orb2) {
 			SizeType orb2 = orb1;
 			ContinuedFractionCollectionType cfCollection;
 			engine_.spectralFunction(cfCollection,
-				                 gfOp,
-				                 sitesLanczos[0],
-				                 sitesLanczos[1],
-				                 spins,
-				                 std::pair<SizeType,SizeType>(orb1,orb2));
-			
+			                         gfOp,
+			                         sitesLanczos[0],
+			                         sitesLanczos[1],
+			                         spins,
+			                         std::pair<SizeType,SizeType>(orb1,orb2));
+
 			plotAll(gf,sites,orb1,cfCollection,plotParams);
-			//}
 		}
 	}
 
@@ -96,8 +98,24 @@ private:
 		assert(sites.size() == 2);
 		assert(gf.n_row() <= v.size());
 		assert(sites[0] + sites[1]*Nc < gf.n_col());
-		for (SizeType x = 0; x < gf.n_row(); ++x)
-			gf(x,sites[0] + sites[1]*Nc + orb*Nc*Nc) = v[x].second;
+		for (SizeType x = 0; x < gf.n_row(); ++x) {
+			ComplexType tmp = lanczosFilterY(v[x].second);
+			SizeType x2 = lanczosFilterX(x,gf.n_row());
+			gf(x2,sites[0] + sites[1]*Nc + orb*Nc*Nc) = tmp;
+		}
+	}
+
+	ComplexType lanczosFilterY(ComplexType z) const
+	{
+		z.real() *= (-0.25);
+		z.imag() *= (0.25);
+		return z;
+	}
+
+	SizeType lanczosFilterX(int x, int total) const
+	{
+		assert(x < total);
+		return total - x - 1;
 	}
 
 	template<typename SomeLanczosModelType>
@@ -112,7 +130,9 @@ private:
 	}
 
 	DcaToDmrgType& myInput_;
-	LanczosPlusPlus::ModelSelector<RealType,VaryingGeometryType,DcaToDmrgType> modelSelector_;
+	LanczosPlusPlus::ModelSelector<RealType,
+	                               VaryingGeometryType,
+	                               DcaToDmrgType> modelSelector_;
 	const ModelType& model_;
 	EngineType engine_;
 };
