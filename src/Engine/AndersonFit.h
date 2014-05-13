@@ -37,8 +37,9 @@ public:
 		for (SizeType n=0;n<totaln;++n) {
 			ComplexType ctmp = gf_[n];
 			ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
-			RealType tmp2 = std::norm(ctmp-ctmp2);
-			tmp += tmp2*tmp2;
+			ComplexType z = ctmp - ctmp2;
+			RealType tmp2 = std::real(z)*std::real(z) + std::imag(z)*std::imag(z);
+			tmp += tmp2;
 		}
 
 		tmp /= static_cast<RealType>(totaln+1.0);
@@ -112,6 +113,7 @@ private:
 		if (ind < n) return 2.0*p[ind]/ComplexType(-p[ind+n],wn);
 
 		SizeType ind2 = ind - n;
+		assert(ind2 < p.size());
 		ComplexType ctmp = ComplexType(-p[ind],wn);
 		return p[ind2]*p[ind2]/(ctmp*ctmp);
 	}
@@ -148,7 +150,7 @@ public:
 
 		std::cout<<"AndersonFit fit with integral "<<integral<<"\n";
 
-		 for (RealType tolerance=1e-6;tolerance<1000;tolerance *=10) {
+		 for (RealType tolerance=1e-6;tolerance<1;tolerance *=10) {
 			std::fill(p.begin(), p.end(), 0.0);
 			int err = aux(p,Gf,tolerance,integral);
 			if (err > 0) {
@@ -175,12 +177,12 @@ private:
 	{
 		SizeType maxIter = 10000;
 		RealType delta = 1e-4;
-		RealType maxGradient = 1.0;
+		RealType maxGradient = 1e-3;
 		AndersonDistanceType andersonDistance(params_,Gf);
 		MinimizerType minimizer(andersonDistance,maxIter,maxGradient);
 
 		for (SizeType k=0;k<p.size()/2;++k)
-			p[k]=2.0*fabs(integral)/(M_PI*p.size());
+			p[k]=1.0;
 
 		for (SizeType k=p.size()/2;k<p.size();++k)
 			p[k] = rng_();
