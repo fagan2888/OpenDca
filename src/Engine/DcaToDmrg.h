@@ -110,6 +110,9 @@ public:
 			}
 		}
 
+		for (SizeType k = 0; k < hubbardParams_.hoppings.n_row(); ++k)
+			hubbardParams_.hoppings(k,k) = 0.0;
+
 		for (SizeType k = 0; k < params_.largeKs; ++k) {
 			VectorRealType kvector(geometry_.dimension());
 			geometry_.index2Rvector(k,kvector);
@@ -226,7 +229,9 @@ public:
 	SizeType dcaIndexToDmrgIndex(SizeType i) const
 	{
 		if (params_.largeKs == 1) {
-			return i;
+			SizeType orb = i % params_.orbitals;
+			SizeType site = static_cast<SizeType>(i/params_.orbitals);
+			return site + orb*geometry_.numberOfSites();
 		} else {
 			if (params_.orbitals > 1) {
 				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
@@ -393,7 +398,8 @@ private:
 		m.resize(params_.orbitals,params_.orbitals);
 		m.setTo(0.0);
 		for (SizeType orb = 0; orb < params_.orbitals; ++orb)
-			m(orb,orb) = hubbardParams_.hoppings(orb,orb+i*params_.orbitals);
+			m(orb,orb) = hubbardParams_.hoppings(0+orb*geometry_.numberOfSites(),
+			                                     i+orb*geometry_.numberOfSites());
 	}
 
 	const ParametersType& params_;

@@ -20,7 +20,7 @@ struct DcaParameters {
 		io.readline(omegas,"DcaOmegaTotal=");
 		io.readline(omegaStep,"DcaOmegaStep=");
 		io.readline(largeKs,"DcaLargeKs=");
-		numberOfMatsubaras = omegas;
+		io.readline(numberOfMatsubaras,"DcaNumberOfMatsubaras=");
 		io.readline(smallKs,"DcaFinePoints=");
 		io.readline(beta,"DcaBeta=");
 		io.readline(mu,"DcaMu=");

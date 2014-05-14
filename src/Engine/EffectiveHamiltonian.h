@@ -83,7 +83,7 @@ public:
 				std::cout<<"#GFTMP"<<site<<" "<<orb<<"\n";
 				for (SizeType i=0;i<gf.n_row();++i) {
 					gfTmp[i]=gf(i,jj);
-					std::cout<<i<<" "<<std::real(gfTmp[i])<<" "<<std::imag(gfTmp[i])<<"\n";
+					std::cout<<gfTmp[i]<<"\n";
 				}
 
 				andersonFit.fit(p,gfTmp,integral[jj]);

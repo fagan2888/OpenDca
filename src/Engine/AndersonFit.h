@@ -185,7 +185,7 @@ private:
 			p[k]=1.0;
 
 		for (SizeType k=p.size()/2;k<p.size();++k)
-			p[k] = rng_();
+			p[k] = 0.0;
 
 		int err=minimizer.conjugateFr(p,delta,tolerance);
 

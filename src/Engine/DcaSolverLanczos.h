@@ -46,7 +46,7 @@ public:
 	   model_(modelSelector_()),
 	   engine_(model_,geometry2.numberOfSites(),myInput)
 	{
-
+		std::cout<<"DcaSolverLanczos: geometry\n";
 		std::cout<<geometry2;
 		RealType Eg = engine_.gsEnergy();
 		std::cout.precision(8);

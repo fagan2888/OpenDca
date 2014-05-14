@@ -84,13 +84,13 @@ public:
 	typedef ParametersType_ ParametersType;
 
 	DcaLoop(const ParametersType& params,
-	               typename InputNgType::Readable& io)
+	        typename InputNgType::Readable& io)
 	: params_(params),
 	  io_(io),
 	  geometry_(io,false,params_.smallKs),
 	  dispersion_(params,geometry_),
-	  sigma_(params.omegas,params.largeKs*params.orbitals*params.orbitals),
-	  gckfsc_(params.omegas,params.largeKs*params.orbitals*params.orbitals),
+	  sigma_(params.numberOfMatsubaras,params.largeKs*params.orbitals*params.orbitals),
+	  gckfsc_(params.numberOfMatsubaras,params.largeKs*params.orbitals*params.orbitals),
 	  fTCoefsR2K_(params.largeKs,params.largeKs)
 	{
 		SizeType Nc = params_.largeKs;
@@ -342,7 +342,10 @@ private:
 	RealType matsubara(int ind) const
 	{
 		int halfNs = static_cast<int>(params_.numberOfMatsubaras*0.5);
-		return (2.0*(ind-halfNs)+1.0)*M_PI/params_.beta;
+		RealType factor = 2.0*M_PI/params_.beta;
+		int ind2 = ind - halfNs;
+		if (ind2 >= 0) return factor*(ind2 + 1);
+		return factor*ind2;
 	}
 
 	RealType makeSigma(const MatrixType& gfCluster,
@@ -368,7 +371,7 @@ private:
 			std::cout<<"\n";
 		}
 
-		MatrixType data2(data.n_row(),data.n_col());
+		MatrixType data2(omegaSize(FREQ_MATSUBARA),data.n_col());
 		if (freqEnum == FREQ_MATSUBARA)
 			hilbertTransfFromReal(data2,data);
 		else
@@ -378,10 +381,10 @@ private:
 		std::cout<<data2;
 
 		std::cout<<"#ONEOVERDATA2\n";
-		for (SizeType i = 0;i < data.n_row(); ++i) {
+		for (SizeType i = 0;i < data2.n_row(); ++i) {
 			ComplexType omega = omegaValue(i,freqEnum);
 			std::cout<<omega<<" ";
-			for (SizeType j = 0;j < data.n_col(); ++j)
+			for (SizeType j = 0;j < data2.n_col(); ++j)
 				std::cout<<1.0/data2(i,j)<<" ";
 			std::cout<<"\n";
 		}
