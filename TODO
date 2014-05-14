@@ -1,0 +1,33 @@
+TODO list
+
+(00) 3 site DMRG Dynamics  [PsimagLite, DMRG++] (DONE)
+(01) odd site DMRG Dynamics [PsimagLite, DMRG++] (DONE)
+(02) Star geometry [PsimagLite] (DONE)
+(03) Free system check for star geometry [FreeFermions] (DONE)
+(04) Lanczos++ check for star geometry [Test of Lanczos++] (DONE)
+(05) In situ measurements for multi-orbital spectral function [Lanczos++, OpenDca]
+(06) In situ measurements for multi-orbital spectral function [DMRG++, OpenDca]
+(07) Wire star geometry [OpenDca] (DONE)
+(08) Allow dca steps to be done with either real or matsubara [OpenDca] (DONE)
+(09) Do most steps with matsubara and last steps with real [OpenDca]
+(10) Problem of mu: Run all sectors to find ground state [OpenDca]
+(11) Problem of mu: Fix the DcaSolverLanczos [OpenDca]
+(12) Problem of mu: Fix the DcaSolverDmrg [OpenDca]
+(13) Liberate all geometry hooks to msGeometry [msGeometry]
+(14) Replace msGeometry with Symfind [OpenDca]
+(15) Test Star geometry ground state (DONE)
+(16) Test Star geometry dynamics [Test for PsimagLite, DMRG++] (DONE)
+(17) Test construction of Effective Hamiltonian with DcaSolverLanczos [Test for OpenDca] (DONE)
+(18) Test construction of Effective Hamiltonian with DcaSolverDmrg [Test for OpenDca]
+(19) Test solution of Effective Hamiltonian with DcaSolverLanczos [Test for OpenDca] (DONE)
+(20) Test solution of Effective Hamiltonian with DcaSolverDmrg [Test for OpenDca]
+(21) Test new built sigma DcaSolverLanczos [Test for OpenDca] (DONE)
+(22) Test new built sigma DcaSolverDmrg [Test for OpenDca]
+(23) Test mu feature DcaSolverLanczos [OpenDca]
+(24) Test mu feature DcaSolverDmrg [OpenDca]
+(25) Checkpoint code, probably just save sigma [OpenDca]
+(26) Start adding other non essential features [OpenDca]
+(27) Correct code for non-diagonal in orbital dispersion [OpenDca]
+
+Steps not necessarily in order, because order is hard to predict at this point.
+
