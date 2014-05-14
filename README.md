@@ -99,7 +99,7 @@ make
 ```
 5. You can run it with
 ```
-./openDca -f TestSuite/inputs/input0.inp
+./openDca -f TestSuite/inputs/input1.inp
 ```
 -------------------------------------------------------------------------------
 
