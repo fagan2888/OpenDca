@@ -16,7 +16,7 @@ potentialV     24  1.84716619 1.84716619 -1.84716619 -1.84716619  -4 -4 -4 -4 1.
 SolverOptions=CorrectionVectorTargetting,lanczosAllowsZero
 CorrectionA=0
 Version=version
-OutputFile=input0.txt
+OutputFile=data0.txt
 InfiniteLoopKeptStates=100
 FiniteLoops 8   5 200 0 -5 200 0 -5 200 0 5 200 0
                 5 200 0 -5 200 0 -5 200 0 5 200 0

@@ -83,10 +83,18 @@ git clone https://github.com/g1257/OpenDca.git
 ```
 
 3. Compile msGeometry
+Not needed if running with star geometry.
+
+4. Compile PsimagLite
+```
+cd PsimagLite/lib/
+make -f Makefile.sample
+cd ../../
+```
 
 4. Now issue
 ```
-cd ../src
+cd OpenDca/src/
 make
 ```
 5. You can run it with
@@ -95,13 +103,3 @@ make
 ```
 -------------------------------------------------------------------------------
 
-TODO LIST
-
-* Hardcoded geometry params
-* Progress Indicator
-* DMRG solver
-* Measurements
-* msGeometry
-* model is also hard wired
-
--------------------------------------------------------------------------------

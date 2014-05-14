@@ -1,5 +1,5 @@
 LDFLAGS =   -L../../PsimagLite/lib -llapack -lblas  -lpthread -lpsimaglite
-CPPFLAGS = -O3 -Werror -Wall  -IEngine    -I../../PsimagLite/src -I../../PsimagLite -I../../dmrgpp/src/Engine  -DUSE_PTHREADS  
+CPPFLAGS = -O3 -Werror -Wall  -IEngine    -I../../PsimagLite/src -I../../PsimagLite -I../../dmrgpp/src/Engine  -DUSE_PTHREADS  -DUSE_GSL
 CXX = g++  
 all: openDca 
 
