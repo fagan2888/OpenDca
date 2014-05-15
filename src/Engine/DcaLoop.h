@@ -8,80 +8,23 @@
 
 namespace OpenDca {
 
-template<typename ParamsType, typename GeometryType>
-class Dispersion {
-
-	typedef typename ParamsType::RealType RealType;
-	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
-
-public:
-
-	Dispersion(const ParamsType& params, const GeometryType& geometry)
-	: params_(params),geometry_(geometry)
-	{}
-
-	RealType operator()(SizeType coarseIndex,
-	                    SizeType gamma1,
-	                    SizeType gamma2,
-	                    SizeType fineIndex) const
-	{
-		if (gamma1 != gamma2) return 0.0;
-
-		VectorRealType kvector(geometry_.dimension());
-		geometry_.index2Kvector(coarseIndex,kvector);
-
-		VectorRealType kvector2(geometry_.dimension());
-		geometry_.getMeshVector(kvector2,fineIndex);
-
-		for (SizeType i=0;i<kvector.size();++i)
-			kvector[i] += kvector2[i];
-
-		return getDispersion(kvector)
-		       + onSitePotential(coarseIndex,gamma1,gamma2);
-	}
-
-private:
-
-	RealType getDispersion(const VectorRealType& kvector) const
-	{
-		SizeType ndim=geometry_.dimension();
-		RealType kplus = 0;
-
-		for (SizeType k=0;k<ndim;++k)
-			kplus += cos(kvector[k]);
-
-		return -2.0 * kplus;
-	}
-
-	RealType onSitePotential(SizeType K, SizeType gamma1, SizeType gamma2) const
-	{
-		if (gamma1 != gamma2) return 0;
-		SizeType index = K + gamma1*geometry_.numberOfSites();
-		assert(index< params_.potentialV.size());
-		return params_.potentialV[index];
-	}
-
-	const ParamsType& params_;
-	const GeometryType& geometry_;
-};
-
-template<typename RealType,typename InputNgType>
+template<typename DispersionType,typename InputNgType>
 class DcaLoop {
 
+	typedef typename DispersionType::ParametersType ParametersType;
+	typedef typename ParametersType::RealType RealType;
+	typedef typename DispersionType::GeometryType GeometryType;
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef PsimagLite::Matrix<RealType> MatrixRealType;
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
-	typedef EffectiveHamiltonian<RealType,InputNgType> EffectiveHamiltonianType;
-	typedef typename EffectiveHamiltonianType::GeometryType GeometryType;
-	typedef typename EffectiveHamiltonianType::ParametersType ParametersType_;
-	typedef Dispersion<ParametersType_,GeometryType> DispersionType;
+	typedef EffectiveHamiltonian<ParametersType,
+	                             GeometryType,
+	                             InputNgType> EffectiveHamiltonianType;
 	typedef typename EffectiveHamiltonianType::DcaToDmrgType DcaToDmrgType;
 
 public:
-
-	typedef ParametersType_ ParametersType;
 
 	DcaLoop(const ParametersType& params,
 	        typename InputNgType::Readable& io)
@@ -150,7 +93,7 @@ public:
 				for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
 					SizeType index = k+gamma1*Nc+gamma2*Nc*norb;
 					makeGf(gckf,k,gamma1,gamma2,freqEnum);
-					for (SizeType omegaIndex = 0; omegaIndex < gckf.size(); ++omegaIndex) {
+					for (SizeType omegaIndex=0; omegaIndex<gckf.size();++omegaIndex) {
 						gckfsc_(omegaIndex,index) = gckf[omegaIndex]/
 						              (1.0+sigma_(omegaIndex,index)*gckf[omegaIndex]);
 					}

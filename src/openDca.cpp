@@ -4,13 +4,20 @@
 #include "Provenance.h"
 #include "DcaLoopGlobals.h"
 #include "FreqEnum.h"
+#include "DispersionSimple.h"
+#include "Geometry/Geometry.h"
 
 int main(int argc, char *argv[])
 {
 	typedef double RealType;
+	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::InputNg<Dmrg::InputCheck> InputNgType;
-	typedef OpenDca::DcaLoop<RealType,InputNgType> DcaLoopType;
-	typedef DcaLoopType::ParametersType ParametersType;
+	typedef PsimagLite::Geometry<ComplexType,
+	                                                   typename InputNgType::Readable,
+	                                                   Dmrg::ProgramGlobals> GeometryType;
+	typedef OpenDca::DispersionSimple<RealType, GeometryType> DispersionType;
+	typedef OpenDca::DcaLoop<DispersionType,InputNgType> DcaLoopType;
+	typedef DispersionType::ParametersType ParametersType;
 	typedef PsimagLite::Concurrency ConcurrencyType;
 
 	ConcurrencyType concurrency(&argc,&argv,1);

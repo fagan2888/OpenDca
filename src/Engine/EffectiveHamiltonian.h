@@ -4,20 +4,20 @@
 #include "Vector.h"
 #include "NoPthreads.h"
 #include "Parallelizer.h"
-#include "DcaParameters.h"
 #include "DcaToDmrg.h"
-#include "Geometry/Geometry.h"
 #include "InputNg.h"
 #include "AndersonFit.h"
 #include "DcaSolverLanczos.h"
 #include "DcaSolverDmrg.h"
 #include "FreqEnum.h"
+#include "Geometry/Geometry.h"
 
 namespace OpenDca {
 
-template<typename RealType, typename InputNgType>
+template<typename ParametersType, typename GeometryType, typename InputNgType>
 class EffectiveHamiltonian {
 
+	typedef typename ParametersType::RealType RealType;
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
 	typedef Dmrg::Basis<SparseMatrixType> BasisType;
@@ -25,17 +25,15 @@ class EffectiveHamiltonian {
 	typedef Dmrg::BasisWithOperators<OperatorsType> BasisWithOperatorsType;
 	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
 	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
-	typedef PsimagLite::Geometry<ComplexType,
-	                             typename InputNgType::Readable,
-	                             Dmrg::ProgramGlobals> GeometryType_;
-	typedef DcaParameters<RealType> ParametersType_;
-	typedef DcaToDmrg<ParametersType_,GeometryType_,InputNgType> DcaToDmrgType_;
-	typedef PsimagLite::Geometry<RealType,DcaToDmrgType_,Dmrg::ProgramGlobals> VaryingGeometryType;
+	typedef DcaToDmrg<ParametersType,GeometryType,InputNgType> DcaToDmrgType_;
+	typedef PsimagLite::Geometry<RealType,
+	                             DcaToDmrgType_,
+	                             Dmrg::ProgramGlobals> VaryingGeometryType;
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef PsimagLite::Matrix<RealType> MatrixRealType;
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
-	typedef AndersonFit<VectorType,ParametersType_> AndersonFitType;
+	typedef AndersonFit<VectorType,ParametersType> AndersonFitType;
 	typedef DcaSolverLanczos<DcaToDmrgType_, VaryingGeometryType> DcaSolverLanczosType;
 	typedef DcaSolverDmrg<DcaToDmrgType_, VaryingGeometryType>  DcaSolverDmrgType;
 	typedef typename DcaSolverDmrgType::DcaSolverBaseType DcaSolverBaseType;
@@ -44,8 +42,6 @@ class EffectiveHamiltonian {
 
 public:
 
-	typedef GeometryType_ GeometryType;
-	typedef ParametersType_ ParametersType;
 	typedef DcaToDmrgType_ DcaToDmrgType;
 
 	EffectiveHamiltonian(const ParametersType& params,
@@ -118,8 +114,10 @@ public:
 
 	void solve(MatrixType& gfCluster)
 	{
-		if (!garbage_)
-			throw PsimagLite::RuntimeError("EffectiveHamiltonian::solve must call build first\n");
+		if (!garbage_) {
+			PsimagLite::String str("solve must call build first\n");
+			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
+		}
 
 		DcaToDmrgType& myInput = *garbage_;
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
@@ -340,8 +338,9 @@ private:
 	DcaToDmrgType* garbage_;
 };
 
-template<typename RealType, typename InputNgType>
-std::ostream& operator<<(std::ostream& os,EffectiveHamiltonian<RealType,InputNgType>& params)
+template<typename RealType, typename GeometryType,typename InputNgType>
+std::ostream& operator<<(std::ostream& os,
+                         EffectiveHamiltonian<RealType,GeometryType,InputNgType>& params)
 {
 	os<<"EffectiveHamiltonian\n";
 	return os;
