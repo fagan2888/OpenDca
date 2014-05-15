@@ -120,19 +120,29 @@ public:
 		}
 
 		DcaToDmrgType& myInput = *garbage_;
+
+		RealType Eg = 1e6;
+		SizeType iMin = 0;
+		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
+			myInput.muFeatureSet(i);
+			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
+			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
+			RealType tmp = solver->findLowestEnergy();
+			deAllocateSolverPtr(solver);
+			if (i > 0 && tmp > Eg) continue;
+			iMin = i;
+			Eg = tmp;
+		}
+
+		if (myInput.muFeatureSize() > 0) {
+			myInput.muFeatureSet(iMin);
+			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
+			std::cout<<" in mu sector "<<iMin<<" "<<myInput.muFeatureGetString()<<"\n";
+		}
+
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 
-		PsimagLite::String dcaSolver = params_.dcaSolver;
-		DcaSolverBaseType* solver = 0;
-		if (dcaSolver == "Dmrg") {
-			solver = new DcaSolverDmrgType(myInput,geometry2,io_);
-		} else if (dcaSolver == "Lanczos") {
-			solver = new DcaSolverLanczosType(myInput,geometry2,io_);
-		} else {
-			PsimagLite::String str("makeHubbardParams(): Unknown solver ");
-			str += dcaSolver;
-			throw PsimagLite::RuntimeError(str);
-		}
+		DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
 
 		RealType omegaEnd = params_.omegas * params_.omegaStep + params_.omegaBegin;
 
@@ -158,7 +168,7 @@ public:
 						gfCluster(x,i+j*Nc+orb*Nc*Nc) =
 						          gfCluster(x,j+i*Nc+orb*Nc*Nc);
 
-		delete solver;
+		deAllocateSolverPtr(solver);
 	}
 
 	const MatrixType& andersonParameters() const
@@ -167,6 +177,30 @@ public:
 	}
 
 private:
+
+	DcaSolverBaseType* allocateSolverPtr(DcaToDmrgType&myInput,
+	                                     const VaryingGeometryType& geometry2)
+	{
+		PsimagLite::String dcaSolver = params_.dcaSolver;
+		DcaSolverBaseType* solver = 0;
+		if (dcaSolver == "Dmrg") {
+			solver = new DcaSolverDmrgType(myInput,geometry2,io_);
+		} else if (dcaSolver == "Lanczos") {
+			solver = new DcaSolverLanczosType(myInput,geometry2,io_);
+		} else {
+			PsimagLite::String str("makeHubbardParams(): Unknown solver ");
+			str += dcaSolver;
+			throw PsimagLite::RuntimeError(str);
+		}
+
+		return solver;
+	}
+
+	void deAllocateSolverPtr(DcaSolverBaseType* solver) const
+	{
+		delete solver;
+		solver = 0;
+	}
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)
 	{

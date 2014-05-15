@@ -53,19 +53,23 @@ public:
 		std::cout<<"DcaSolverLanczos::Energy= "<<Eg<<"\n";
 	}
 
-	void solve(MatrixType& gf,const VectorSizeType& sites,const PlotParamsType& plotParams)
+	void solve(MatrixType& gf,
+	           const VectorSizeType& sites,
+	           const PlotParamsType& plotParams)
 	{
 		SizeType gfOp = LanczosPlusPlus::ProgramGlobals::operator2id("c");
 		typename PsimagLite::Vector<PairType>::Type spins(1);
 		spins[0] = PairType(0,0);
 
-		if (sites.size() != 2) throw PsimagLite::RuntimeError("No sites in input file!\n");
+		if (sites.size() != 2)
+			throw PsimagLite::RuntimeError("No sites in input file!\n");
 
 		std::cout<<"#dca indexing: gf(i="<<sites[0]<<",j="<<sites[1]<<")\n";
 		VectorSizeType sitesLanczos(2);
 		sitesLanczos[0] = myInput_.dcaIndexToDmrgIndex(sites[0]);
 		sitesLanczos[1] = myInput_.dcaIndexToDmrgIndex(sites[1]);
-		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0]<<",j="<<sitesLanczos[1]<<")\n";
+		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0];
+		std::cout<<",j="<<sitesLanczos[1]<<")\n";
 
 		SizeType norbitals = maxOrbitals(model_);
 		for (SizeType orb1 = 0;orb1 < norbitals; ++orb1) {
@@ -80,6 +84,12 @@ public:
 
 			plotAll(gf,sites,orb1,cfCollection,plotParams);
 		}
+	}
+
+	RealType findLowestEnergy()
+	{
+		myInput_.unimplemented("findLowestEnergy");
+		return 0.0;
 	}
 
 private:

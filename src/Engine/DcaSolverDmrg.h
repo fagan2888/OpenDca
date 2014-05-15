@@ -30,17 +30,20 @@ public:
 	   sitesDone_(0)
 	{}
 
-	void solve(MatrixType& gf,const VectorSizeType& sites,const PlotParamsType& plotParams)
+	void solve(MatrixType& gf,
+	           const VectorSizeType& sites,
+	           const PlotParamsType& plotParams)
 	{
 		if (sites.size() != 2) throw PsimagLite::RuntimeError("DcaSolverDmrg\n");
-		
+
 		std::cout<<"#dca indexing: gf(i="<<sites[0]<<",j="<<sites[1]<<")\n";
-		
+
 		VectorSizeType sitesLanczos(2);
 		sitesLanczos[0] = myInput_.dcaIndexToDmrgIndex(sites[0]);
 		sitesLanczos[1] = myInput_.dcaIndexToDmrgIndex(sites[1]);
-		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0]<<",j="<<sitesLanczos[1]<<")\n";
-		
+		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0];
+		std::cout<<",j="<<sitesLanczos[1]<<")\n";
+
 		if (std::find(sitesDone_.begin(),sitesDone_.end(),sites[0]) != sitesDone_.end())
 			return;
 
@@ -51,19 +54,28 @@ public:
 			RunType run2(sites[0],x,RunType::TYPE_DAGGER);
 			runs.push_back(run2);
 		}
-		
+
 		solveForSite(gf,runs,plotParams);
-		
+
 		sitesDone_.push_back(sites[0]);
+	}
+
+	RealType findLowestEnergy()
+	{
+		myInput_.unimplemented("findLowestEnergy");
+		return 0.0;
 	}
 
 private:
 
-	void solveForSite(MatrixType& gf,const VectorRunType& runs,const PlotParamsType& plotParams)
+	void solveForSite(MatrixType& gf,
+	                  const VectorRunType& runs,
+	                  const PlotParamsType& plotParams)
 	{
 		typedef ParallelDmrgSolver<DcaSolverBaseType> ParallelDmrgSolverType;
 		typedef PsimagLite::Parallelizer<ParallelDmrgSolverType> ParallelizerType;
-		ParallelizerType threadedSolver(PsimagLite::Concurrency::npthreads,PsimagLite::MPI::COMM_WORLD);
+		ParallelizerType threadedSolver(PsimagLite::Concurrency::npthreads,
+		                                PsimagLite::MPI::COMM_WORLD);
 
 		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,plotParams);
 
@@ -71,7 +83,7 @@ private:
 	}
 
 private:
-	
+
 	DcaToDmrgType& myInput_;
 	const VaryingGeometryType& geometry2_;
 	typename InputNgType::Readable& io_;

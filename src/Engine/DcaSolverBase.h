@@ -20,12 +20,17 @@ public:
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef PsimagLite::TridiagonalMatrix<RealType> TridiagonalMatrixType;
 	typedef PsimagLite::ContinuedFraction<TridiagonalMatrixType> ContinuedFractionType;
-	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType> ContinuedFractionCollectionType;
+	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType>
+	                    ContinuedFractionCollectionType;
 	typedef typename ContinuedFractionType::PlotParamsType PlotParamsType;
 
 	virtual ~DcaSolverBase() {}
 
-	virtual void solve(MatrixType& gf,const VectorSizeType& sites,const PlotParamsType& plotParams) = 0;
+	virtual void solve(MatrixType& gf,
+	                   const VectorSizeType& sites,
+	                   const PlotParamsType& plotParams) = 0;
+
+	virtual RealType findLowestEnergy() = 0;
 
 };
 }

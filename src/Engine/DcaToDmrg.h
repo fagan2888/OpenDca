@@ -86,8 +86,8 @@ public:
 				if (i<clusterSize && j<clusterSize) { //we're in the cluster
 					hubbardParams_.hoppings(ind,jnd)=std::real(tCluster(i,j));
 					if (ind == jnd)
-						hubbardParams_.potentialV[ind] = hubbardParams_.potentialV[ind + total]
-						                               = originalV[ind];
+						hubbardParams_.potentialV[ind] =
+						  hubbardParams_.potentialV[ind + total] = originalV[ind];
 				} else if (i<clusterSize && j>=clusterSize) { // we're inter cluster
 					getBathPoint(r,alpha,j,clusterSize,nBathOrbitals);
 					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,i);
@@ -99,12 +99,14 @@ public:
 					getBathPoint(r2,alpha2,j,clusterSize,nBathOrbitals);
 
 					if (alpha==alpha2 && r!=r2) {
-						hubbardParams_.hoppings(ind,jnd) = lambdaCorrected(lambda,r,r2,alpha);
+						hubbardParams_.hoppings(ind,jnd) =
+						  lambdaCorrected(lambda,r,r2,alpha);
 					}
 
 					if (alpha==alpha2 && r==r2) {
-						hubbardParams_.potentialV[ind]=hubbardParams_.potentialV[ind+total]
-						= lambdaCorrected(lambda,r,r2,alpha);
+						hubbardParams_.potentialV[ind] =
+						  hubbardParams_.potentialV[ind+total]
+						  = lambdaCorrected(lambda,r,r2,alpha);
 					}
 				}
 			}
@@ -260,6 +262,29 @@ public:
 		return r2 -NcOver2 + alpha*nBath + Nc + NcOver2*nBath;
 	}
 
+	SizeType muFeatureSize() const
+	{
+		unimplemented("muFeatureSize");
+		return 0;
+	}
+
+	void muFeatureSet(SizeType i)
+	{
+		unimplemented("muFeatureSet");
+	}
+
+	PsimagLite::String muFeatureGetString() const
+	{
+		return unimplemented("muFeatureGetString",false);
+	}
+
+	PsimagLite::String unimplemented(PsimagLite::String what, bool print = true) const
+	{
+		PsimagLite::String str = "DcaToDmrg: Unimplemented " + what;
+		if (print) std::cerr<<str<<"\n";
+		return str;
+	}
+
 private:
 
 	RealType tBathClusterCorrected(SizeType alpha, SizeType r, SizeType ind) const
@@ -303,13 +328,6 @@ private:
 
 	}
 
-	void unimplemented(PsimagLite::String functionName,PsimagLite::String label)
-	{
-		PsimagLite::String str = "unimplemented " + functionName + "(...)";
-		str += " for label " + label + "\n";
-		throw PsimagLite::RuntimeError(str);
-	}
-
 	// Formula is i=clusterSize + Nb*r + alpha, given Nc, Nb and i determines alpha and r
 	void getBathPoint(SizeType& r,
 	                  SizeType& alpha,
@@ -334,7 +352,7 @@ private:
 	{
 		if (params_.largeKs == 1) {
 			PsimagLite::String str("setHoppings\n");
-			throw PsimagLite::RuntimeError(str);	
+			throw PsimagLite::RuntimeError(str);
 		} else {
 			if (params_.orbitals > 1) {
 				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
@@ -402,6 +420,13 @@ private:
 			                                     i+orb*geometry_.numberOfSites());
 	}
 
+	void unimplemented(PsimagLite::String functionName,PsimagLite::String label)
+	{
+		PsimagLite::String str = "unimplemented " + functionName + "(...)";
+		str += " for label " + label + "\n";
+		throw PsimagLite::RuntimeError(str);
+	}
+
 	const ParametersType& params_;
 	const MatrixType& tCluster_;
 	const MatrixType& tBathCluster_;
@@ -410,7 +435,7 @@ private:
 	typename InputNgType::Readable& io_;
 	SizeType lastTermSeen_;
 	SizeType connectorsCounter_;
-};
+}; // class DcaToDmrg
 
 }
 
