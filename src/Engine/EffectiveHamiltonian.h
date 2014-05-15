@@ -128,7 +128,7 @@ public:
 			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
 			RealType tmp = solver->findLowestEnergy();
-			deAllocateSolverPtr(solver);
+			deAllocateSolverPtr(&solver);
 			if (i > 0 && tmp > Eg) continue;
 			iMin = i;
 			Eg = tmp;
@@ -168,7 +168,7 @@ public:
 						gfCluster(x,i+j*Nc+orb*Nc*Nc) =
 						          gfCluster(x,j+i*Nc+orb*Nc*Nc);
 
-		deAllocateSolverPtr(solver);
+		deAllocateSolverPtr(&solver);
 	}
 
 	const MatrixType& andersonParameters() const
@@ -196,10 +196,11 @@ private:
 		return solver;
 	}
 
-	void deAllocateSolverPtr(DcaSolverBaseType* solver) const
+	void deAllocateSolverPtr(DcaSolverBaseType** solver) const
 	{
-		delete solver;
-		solver = 0;
+		DcaSolverBaseType* solver2 = *solver;
+		delete solver2;
+		solver2 = 0;
 	}
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)

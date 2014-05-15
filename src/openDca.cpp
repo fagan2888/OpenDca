@@ -13,8 +13,8 @@ int main(int argc, char *argv[])
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::InputNg<Dmrg::InputCheck> InputNgType;
 	typedef PsimagLite::Geometry<ComplexType,
-	                                                   typename InputNgType::Readable,
-	                                                   Dmrg::ProgramGlobals> GeometryType;
+	                             typename InputNgType::Readable,
+	                             Dmrg::ProgramGlobals> GeometryType;
 	typedef OpenDca::DispersionSimple<RealType, GeometryType> DispersionType;
 	typedef OpenDca::DcaLoop<DispersionType,InputNgType> DcaLoopType;
 	typedef DispersionType::ParametersType ParametersType;

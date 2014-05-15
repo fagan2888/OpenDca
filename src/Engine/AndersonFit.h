@@ -67,7 +67,10 @@ public:
 				ComplexType ctmp = gf_[n];
 				ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
 				ComplexType tmp2 = ctmp - ctmp2;
-				ComplexType g0Gradient = andersonG0gradient(p_,matsubaras_[n],params_.mu,i);
+				ComplexType g0Gradient = andersonG0gradient(p_,
+				                                            matsubaras_[n],
+				                                            params_.mu,
+				                                            i);
 				tmp += (std::real(tmp2) * std::real(g0Gradient) +
 				        std::imag(tmp2) * std::imag(g0Gradient));
 			}

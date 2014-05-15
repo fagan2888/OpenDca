@@ -41,7 +41,8 @@ class ParallelDmrgSolver {
 	typedef typename DcaSolverBaseType::VaryingGeometryType VaryingGeometryType;
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
 	typedef typename DcaToDmrgType::RealType RealType;
-	typedef Dmrg::ParametersDmrgSolver<RealType,typename InputNgType::Readable> ParametersDmrgSolverType;
+	typedef Dmrg::ParametersDmrgSolver<RealType,
+	                                   typename InputNgType::Readable> ParametersDmrgSolverType;
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
 	typedef Dmrg::Basis<SparseMatrixType> BasisType;
@@ -55,7 +56,8 @@ class ParallelDmrgSolver {
 	                                  VaryingGeometryType> ModelBaseType;
 	typedef Dmrg::MatrixVectorOnTheFly<ModelBaseType> MatrixVectorType;
 	typedef Dmrg::VectorWithOffsets<ComplexType> VectorWithOffsetType;
-	typedef Dmrg::WaveFunctionTransfFactory<LeftRightSuperType,VectorWithOffsetType> WaveFunctionTransfType;
+	typedef Dmrg::WaveFunctionTransfFactory<LeftRightSuperType,
+	                                        VectorWithOffsetType> WaveFunctionTransfType;
 	typedef Dmrg::TargetingCorrectionVector<PsimagLite::LanczosSolver,
 	                                        MatrixVectorType,
 	                                        WaveFunctionTransfType> TargetingType;
@@ -63,7 +65,7 @@ class ParallelDmrgSolver {
 	typedef typename TargetingType::TargettingParamsType TargettingParamsType;
 	typedef Dmrg::DmrgSolver<TargetingType> SolverType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
-	
+
 public:
 
 	typedef Run RunType;
@@ -95,7 +97,8 @@ public:
 		SizeType clusterSites = gf_.n_col();
 		clusterSites = static_cast<SizeType>(sqrt(clusterSites));
 		SizeType l = paramsDmrg_.filename.length();
-		paramsDmrg_.filename = paramsDmrg_.filename.substr(0,l-4) + ttos(mpiRank) + ".txt";
+		paramsDmrg_.filename = paramsDmrg_.filename.substr(0,l-4) +
+		                         ttos(mpiRank) + ".txt";
 		for (SizeType p=0;p<blockSize;p++) {
 			SizeType px = (threadNum+npthreads*mpiRank)*blockSize + p;
 			if (px >= total || px >= runs_.size()) continue;
@@ -110,7 +113,8 @@ public:
 			SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
 			tsp.setSite(0,siteDmrg);
 
-			RealType omegaValue = plotParams_.omega1 + plotParams_.deltaOmega*run.omegaIndex;
+			RealType omegaValue = plotParams_.omega1 +
+			                        plotParams_.deltaOmega*run.omegaIndex;
 			tsp.omega(omegaValue);
 
 			SolverType dmrgSolver(model_,tsp,myInput_);
@@ -118,7 +122,8 @@ public:
 
 			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
 				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
-				gf_(run.omegaIndex,run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
+				gf_(run.omegaIndex,
+				    run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
 			}
 		}
 
