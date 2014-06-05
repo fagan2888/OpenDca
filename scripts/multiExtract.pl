@@ -45,6 +45,12 @@ system("perl extract.pl \"#SIGMA\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
+$outfile = createFile($file,"delta",$it);
+system("perl extract.pl \"#DELTAOMEGA\" $it < $file > $outfile");
+deleteColumn("$outfile",0);
+#commentLines("$outfile",1);
+addFreq("$outfile","imag");
+
 sub commentLines
 {
 	my ($file,$l) = @_;
