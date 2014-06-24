@@ -43,6 +43,14 @@ public:
 	typedef InputNgType_ InputNgType;
 	typedef RealType_ RealType;
 
+	template<typename SomeMemResolvType>
+	SizeType memResolv(SomeMemResolvType& mres,
+	                   SizeType x,
+	                   PsimagLite::String msg = "") const
+	{
+		return 0;
+	}
+
 	DcaToDmrg(const ParametersType& params,
 	          const MatrixType& tCluster,
 	          const MatrixType& tBathCluster,
@@ -149,7 +157,8 @@ public:
 		           label == "DynamicDmrgType=" ||
 		           label == "TargetElectronsUp=" ||
 		           label == "TargetElectronsDown=" ||
-		           label == "Orbitals=") {
+		           label == "Orbitals=" ||
+		           label == "FeAsMode=") {
 			io_.readline(x,label);
 		} else if (label == "BathSitesPerSite=") {
 			x = params_.nofPointsInBathPerClusterPoint;
