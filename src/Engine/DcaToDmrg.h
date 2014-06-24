@@ -43,6 +43,8 @@ public:
 	typedef InputNgType_ InputNgType;
 	typedef RealType_ RealType;
 
+	enum SpinEnum {SPIN_UP, SPIN_DOWN};
+
 	template<typename SomeMemResolvType>
 	SizeType memResolv(SomeMemResolvType& mres,
 	                   SizeType x,
@@ -63,8 +65,22 @@ public:
 	   geometry_(geometry),
 	   io_(io),
 	   lastTermSeen_(0),
-	   connectorsCounter_(0)
+	   connectorsCounter_(0),
+	   electronsUp_(0),
+	   electronsDown_(0)
 	{
+		io_.readline(electronsUp_,"TargetElectronsUp=");
+		io_.readline(electronsDown_,"TargetElectronsDown=");
+
+		SizeType totalSites = params_.largeKs*(1+ params_.nofPointsInBathPerClusterPoint);
+		SizeType onp1 = 2*params_.orbitals * totalSites + 1;
+		muFeatureOffset_.resize(onp1);
+		SizeType sum = 0;
+		for (SizeType i = 0; i < onp1; ++i) {
+			sum += (i+1);
+			muFeatureOffset_[i] = sum;
+		}
+
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		SizeType total=params_.largeKs*(1+nBath)*params_.orbitals;
 
@@ -155,11 +171,13 @@ public:
 		           label == "LadderLeg=" ||
 		           label == "FERMIONSIGN=" ||
 		           label == "DynamicDmrgType=" ||
-		           label == "TargetElectronsUp=" ||
-		           label == "TargetElectronsDown=" ||
 		           label == "Orbitals=" ||
 		           label == "FeAsMode=") {
 			io_.readline(x,label);
+		} else if (label == "TargetElectronsUp=") {
+			x = electronsUp_;
+		} else if (label == "TargetElectronsDown=") {
+			x = electronsDown_;
 		} else if (label == "BathSitesPerSite=") {
 			x = params_.nofPointsInBathPerClusterPoint;
 		} else {
@@ -273,28 +291,42 @@ public:
 
 	SizeType muFeatureSize() const
 	{
-		unimplemented("muFeatureSize");
-		return 0;
+		SizeType onp1 = muFeatureOffset_.size();
+		SizeType onp2 = onp1 + 1;
+		return static_cast<SizeType>(onp1*onp2*0.5);
 	}
 
-	void muFeatureSet(SizeType i)
+	void muFeatureSet(SizeType ind)
 	{
-		unimplemented("muFeatureSet");
+		SizeType onp1 = muFeatureOffset_.size();
+		for (SizeType i = 0; i < onp1; ++i) {
+			if (ind < muFeatureOffset_[i]) return muFeatureSet(ind,i);
+		}
 	}
 
-	PsimagLite::String muFeatureGetString() const
+	SizeType electrons(SpinEnum spin) const
 	{
-		return unimplemented("muFeatureGetString",false);
-	}
-
-	PsimagLite::String unimplemented(PsimagLite::String what, bool print = true) const
-	{
-		PsimagLite::String str = "DcaToDmrg: Unimplemented " + what;
-		if (print) std::cerr<<str<<"\n";
-		return str;
+		return (spin == SPIN_UP) ? electronsUp_ : electronsDown_;
 	}
 
 private:
+
+	void muFeatureSet(SizeType ind, SizeType o)
+	{
+		SizeType ind2 = (o == 0) ? 0 : ind - muFeatureOffset_[o-1];
+		assert(o == 0 || ind >= muFeatureOffset_[o-1]);
+		SizeType total = o;
+		electronsUp_ = ind2;
+		electronsDown_ = total - ind2;
+		SizeType onp1 = muFeatureOffset_.size();
+		assert(onp1 > 0);
+		onp1--;
+		assert(!(onp1 & 1));
+		onp1 = static_cast<SizeType>(onp1*0.5);
+		if (electronsUp_ > onp1 || electronsDown_ > onp1) {
+			electronsUp_ = electronsDown_ = 0;
+		}
+	}
 
 	RealType tBathClusterCorrected(SizeType alpha, SizeType r, SizeType ind) const
 	{
@@ -444,6 +476,9 @@ private:
 	typename InputNgType::Readable& io_;
 	SizeType lastTermSeen_;
 	SizeType connectorsCounter_;
+	SizeType electronsUp_;
+	SizeType electronsDown_;
+	VectorSizeType muFeatureOffset_;
 }; // class DcaToDmrg
 
 }

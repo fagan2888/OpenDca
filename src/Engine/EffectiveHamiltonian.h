@@ -108,7 +108,7 @@ public:
 		std::cout<<"andersonVp and andersonEp\n";
 		std::cout<<p_;
 
-		// Calculate "hoppings"	
+		// Calculate "hoppings"
 		garbage_ = makeHubbardParams(ekbar,io_);
 	}
 
@@ -125,6 +125,12 @@ public:
 		SizeType iMin = 0;
 		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
 			myInput.muFeatureSet(i);
+			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
+			        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			if (total == 0) continue;
+			std::cout<<"Trying with "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
+			std::cout<<" electrons up and ";
+			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
 			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
 			RealType tmp = solver->findLowestEnergy();
@@ -137,7 +143,10 @@ public:
 		if (myInput.muFeatureSize() > 0) {
 			myInput.muFeatureSet(iMin);
 			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
-			std::cout<<" in mu sector "<<iMin<<" "<<myInput.muFeatureGetString()<<"\n";
+			std::cout<<" in mu sector "<<iMin;
+			std::cout<<" electrons up "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
+			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			std::cout<<"\n";
 		}
 
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
@@ -362,7 +371,7 @@ private:
 
 		for (int i=start;i<end;++i)
 			for (SizeType j=0;j<p.n_col();++j)
-				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix		
+				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix
 	}
 
 	const ParametersType& params_;

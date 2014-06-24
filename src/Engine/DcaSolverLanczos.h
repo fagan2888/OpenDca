@@ -88,8 +88,7 @@ public:
 
 	RealType findLowestEnergy()
 	{
-		myInput_.unimplemented("findLowestEnergy");
-		return 0.0;
+		return engine_.gsEnergy();
 	}
 
 private:

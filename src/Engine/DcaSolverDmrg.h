@@ -62,8 +62,7 @@ public:
 
 	RealType findLowestEnergy()
 	{
-		myInput_.unimplemented("findLowestEnergy");
-		return 0.0;
+		throw PsimagLite::RuntimeError("findLowestEnergy\n");
 	}
 
 private:
