@@ -30,7 +30,7 @@ public:
 	                   const VectorSizeType& sites,
 	                   const PlotParamsType& plotParams) = 0;
 
-	virtual RealType findLowestEnergy() = 0;
+	virtual RealType findLowestEnergy() const = 0;
 
 };
 }

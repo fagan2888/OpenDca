@@ -20,6 +20,7 @@ public:
 	typedef typename DcaSolverBaseType::VectorSizeType VectorSizeType;
 	typedef typename DcaSolverBaseType::PlotParamsType PlotParamsType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
+	typedef ParallelDmrgSolver<DcaSolverBaseType> ParallelDmrgSolverType;
 
 	DcaSolverDmrg(DcaToDmrgType& myInput,
 	                        const VaryingGeometryType& geometry2,
@@ -27,8 +28,14 @@ public:
 	 : myInput_(myInput),
 	   geometry2_(geometry2),
 	   io_(io),
-	   sitesDone_(0)
-	{}
+	   sitesDone_(0),
+	   energy_(0.0)
+	{
+		MatrixType gf(0,0);
+		VectorRunType runs;
+		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,0);
+		energy_ = helperSolver.energy();
+	}
 
 	void solve(MatrixType& gf,
 	           const VectorSizeType& sites,
@@ -55,30 +62,31 @@ public:
 			runs.push_back(run2);
 		}
 
-		solveForSite(gf,runs,plotParams);
+		solveForSite(gf,runs,&plotParams);
 
 		sitesDone_.push_back(sites[0]);
 	}
 
-	RealType findLowestEnergy()
+	RealType findLowestEnergy() const
 	{
-		throw PsimagLite::RuntimeError("findLowestEnergy\n");
+		return energy_;
 	}
 
 private:
 
 	void solveForSite(MatrixType& gf,
 	                  const VectorRunType& runs,
-	                  const PlotParamsType& plotParams)
+	                  const PlotParamsType* plotParamsPtr)
 	{
-		typedef ParallelDmrgSolver<DcaSolverBaseType> ParallelDmrgSolverType;
 		typedef PsimagLite::Parallelizer<ParallelDmrgSolverType> ParallelizerType;
 		ParallelizerType threadedSolver(PsimagLite::Concurrency::npthreads,
 		                                PsimagLite::MPI::COMM_WORLD);
 
-		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,plotParams);
+		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,plotParamsPtr);
 
 		threadedSolver.loopCreate(runs.size(),helperSolver);
+
+		energy_ = helperSolver.energy();
 	}
 
 private:
@@ -87,6 +95,7 @@ private:
 	const VaryingGeometryType& geometry2_;
 	typename InputNgType::Readable& io_;
 	VectorSizeType sitesDone_;
+	RealType energy_;
 };
 }
 

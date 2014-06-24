@@ -86,7 +86,7 @@ public:
 		}
 	}
 
-	RealType findLowestEnergy()
+	RealType findLowestEnergy() const
 	{
 		return engine_.gsEnergy();
 	}

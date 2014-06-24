@@ -9,6 +9,7 @@
 #include "../../dmrgpp/src/Engine/MatrixVectorOnTheFly.h"
 #include "../../dmrgpp/src/Engine/LeftRightSuper.h"
 #include "../../dmrgpp/src/Engine/TargetingCorrectionVector.h"
+#include "../../dmrgpp/src/Engine/TargetingGroundState.h"
 #include "../../dmrgpp/src/Engine/Operators.h"
 #include "../../dmrgpp/src/Engine/BasisWithOperators.h"
 #include "../../dmrgpp/src/Engine/ModelHelperLocal.h"
@@ -61,9 +62,14 @@ class ParallelDmrgSolver {
 	typedef Dmrg::TargetingCorrectionVector<PsimagLite::LanczosSolver,
 	                                        MatrixVectorType,
 	                                        WaveFunctionTransfType> TargetingType;
+	typedef Dmrg::TargetingGroundState<PsimagLite::LanczosSolver,
+	                                   MatrixVectorType,
+	                                   WaveFunctionTransfType> TargetingGroundStateType;
 	typedef typename TargetingType::MatrixVectorType::ModelType ModelType;
 	typedef typename TargetingType::TargettingParamsType TargettingParamsType;
+	typedef typename TargetingGroundStateType::TargettingParamsType GsParamsType;
 	typedef Dmrg::DmrgSolver<TargetingType> SolverType;
+	typedef Dmrg::DmrgSolver<TargetingGroundStateType> SolverGroundStateType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 
 public:
@@ -76,7 +82,7 @@ public:
 	                              typename InputNgType::Readable& io,
 	                              MatrixType& gf,
 	                              const VectorRunType& runs,
-	                              const PlotParamsType& plotParams)
+	                              const PlotParamsType* plotParams)
 	: myInput_(myInput),
 	  geometry2_(geometry2),
 	  paramsDmrg_(io),
@@ -85,7 +91,12 @@ public:
 	  plotParams_(plotParams),
 	  modelSelector_(paramsDmrg_.model),
 	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_))
-	{}
+	{
+		GsParamsType tsp(myInput_,model_);
+		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
+		dmrgSolver.main(geometry2_);
+		energy_ = dmrgSolver.energy();
+	}
 
 	void thread_function_(SizeType threadNum,
 	                                    SizeType blockSize,
@@ -113,13 +124,16 @@ public:
 			SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
 			tsp.setSite(0,siteDmrg);
 
-			RealType omegaValue = plotParams_.omega1 +
-			                        plotParams_.deltaOmega*run.omegaIndex;
+			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
+			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
 			tsp.omega(omegaValue);
 
 			SolverType dmrgSolver(model_,tsp,myInput_);
 			dmrgSolver.main(geometry2_);
 
+			energy_ = dmrgSolver.energy();
+
+			if (gf_.n_row() == 0) return;
 			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
 				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
 				gf_(run.omegaIndex,
@@ -130,6 +144,11 @@ public:
 		PsimagLite::MPI::allReduce(gf_);
 	}
 
+	RealType energy() const
+	{
+		return energy_;
+	}
+
 private:
 
 	DcaToDmrgType& myInput_;
@@ -137,9 +156,10 @@ private:
 	ParametersDmrgSolverType paramsDmrg_;
 	MatrixType& gf_;
 	const VectorRunType& runs_;
-	const PlotParamsType& plotParams_;
+	const PlotParamsType* plotParams_;
 	Dmrg::ModelSelector<ModelType> modelSelector_;
 	const ModelType& model_;
+	RealType energy_;
 };
 
 }

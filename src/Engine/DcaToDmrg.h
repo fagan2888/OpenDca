@@ -222,8 +222,8 @@ public:
 		           label == "TSPProductOrSum=" ||
 		           label == "TSPOperator=" ||
 		           label == "CorrectionVectorAlgorithm=" ||
-		           label == "SolverOptions=" ||
-		           label == "Model=") {
+		           label == "Model=" ||
+		           label == "SolverOptions=") {
 			io_.readline(x,label);
 		} else {
 			unimplemented("readline",label);
