@@ -35,7 +35,8 @@ public:
 	{
 		MatrixType gf(0,0);
 		VectorRunType runs;
-		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,0);
+		DcaToDmrgType myInput2 = myInput_;
+		ParallelDmrgSolverType helperSolver(myInput2,geometry2_,gf,runs,0);
 		energy_ = helperSolver.energy();
 	}
 
@@ -89,7 +90,8 @@ private:
 		ParallelizerType threadedSolver(PsimagLite::Concurrency::npthreads,
 		                                PsimagLite::MPI::COMM_WORLD);
 
-		ParallelDmrgSolverType helperSolver(myInput_,geometry2_,io_,gf,runs,plotParamsPtr);
+		DcaToDmrgType myInput = myInput_;
+		ParallelDmrgSolverType helperSolver(myInput,geometry2_,gf,runs,plotParamsPtr);
 
 		threadedSolver.loopCreate(runs.size(),helperSolver);
 

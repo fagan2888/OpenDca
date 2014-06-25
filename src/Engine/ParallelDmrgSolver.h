@@ -46,7 +46,7 @@ class ParallelDmrgSolver {
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
 	typedef typename DcaToDmrgType::RealType RealType;
 	typedef Dmrg::ParametersDmrgSolver<RealType,
-	                                   typename InputNgType::Readable> ParametersDmrgSolverType;
+	                                   DcaToDmrgType> ParametersDmrgSolverType;
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
 	typedef Dmrg::Basis<SparseMatrixType> BasisType;
@@ -76,8 +76,6 @@ class ParallelDmrgSolver {
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 	typedef PsimagLite::TridiagonalMatrix<RealType> TridiagonalMatrixType;
 	typedef PsimagLite::ContinuedFraction<TridiagonalMatrixType> ContinuedFractionType;
-//	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType>
-//	ContinuedFractionCollectionType;
 
 public:
 
@@ -87,20 +85,20 @@ public:
 	static const SizeType freqDependent = 0;
 
 	ParallelDmrgSolver(DcaToDmrgType& myInput,
-	                              const VaryingGeometryType& geometry2,
-	                              typename InputNgType::Readable& io,
-	                              MatrixType& gf,
-	                              const VectorRunType& runs,
-	                              const PlotParamsType* plotParams)
+	                   const VaryingGeometryType& geometry2,
+	                   MatrixType& gf,
+	                   const VectorRunType& runs,
+	                   const PlotParamsType* plotParams)
 	: myInput_(myInput),
 	  geometry2_(geometry2),
-	  paramsDmrg_(io),
+	  paramsDmrg_(myInput),
 	  gf_(gf),
 	  runs_(runs),
 	  plotParams_(plotParams),
 	  modelSelector_(paramsDmrg_.model),
 	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_)),
-	  orbitals_(1)
+	  orbitals_(1),
+	  tsp_(myInput_,model_)
 	{
 		myInput_.readline(orbitals_,"Orbitals=");
 		paramsDmrg_.electronsUp = myInput_.electrons(DcaToDmrgType::SPIN_UP);
@@ -128,21 +126,21 @@ public:
 			if (px >= total || px >= runs_.size()) continue;
 			const RunType& run = runs_[px];
 
-			TargettingParamsType tsp(myInput_,model_);
-
-			tsp.type( (run.dynamicDmrgType == RunType::TYPE_NORMAL) ? 0 : 1);
+			tsp_.type( (run.dynamicDmrgType == RunType::TYPE_NORMAL) ? 0 : 1);
 			if (run.dynamicDmrgType == RunType::TYPE_DAGGER)
-				tsp.transposeConjugate(0);
+				tsp_.transposeConjugate(0);
 
 			SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
-			tsp.setSite(0,siteDmrg);
+			tsp_.setSite(1,siteDmrg);
 
 			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
 			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
 			if (!freqDependent) omegaValue = 0;
-			tsp.omega(omegaValue);
+			tsp_.omega(omegaValue);
 
-			SolverType dmrgSolver(model_,tsp,myInput_);
+			// FIXME: ADJUST tsp_ here
+
+			SolverType dmrgSolver(model_,tsp_,myInput_);
 			dmrgSolver.main(geometry2_);
 
 			energy_ = dmrgSolver.energy();
@@ -196,6 +194,7 @@ private:
 	const ModelType& model_;
 	RealType energy_;
 	SizeType orbitals_;
+	TargettingParamsType tsp_;
 };
 
 }

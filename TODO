@@ -28,6 +28,7 @@ TODO list
 (25) Checkpoint code, probably just save sigma [OpenDca]
 (26) Start adding other non essential features [OpenDca]
 (27) Correct code for non-diagonal in orbital dispersion [OpenDca]
+(28) gfcluster for all orbitals
 
 Steps not necessarily in order, because order is hard to predict at this point.
 

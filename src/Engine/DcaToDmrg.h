@@ -153,7 +153,7 @@ public:
 
 	void read(VectorSizeType& x,PsimagLite::String label)
 	{
-		if (label == "TSPSites" || label == "TSPLoops") {
+		if (label == "TSPSites" || label == "TSPLoops" || label == "COOKED_EXTRA") {
 			io_.read(x,label);
 		} else {
 			unimplemented("read",label);
@@ -172,7 +172,13 @@ public:
 		           label == "FERMIONSIGN=" ||
 		           label == "DynamicDmrgType=" ||
 		           label == "Orbitals=" ||
-		           label == "FeAsMode=") {
+		           label == "FeAsMode=" ||
+		           label == "LanczosStepsForEnergyConvergence=" ||
+		           label == "LanczosSaveLanczosVectors=" ||
+		           label == "LanczosSteps=" ||
+		           label == "DynamicDmrgStepsForEnergyConvergence=" ||
+		           label == "DynamicDmrgSaveLanczosVectors=" ||
+		           label == "DynamicDmrgSteps=") {
 			io_.readline(x,label);
 		} else if (label == "TargetElectronsUp=") {
 			x = electronsUp_;
@@ -181,7 +187,8 @@ public:
 		} else if (label == "BathSitesPerSite=") {
 			x = params_.nofPointsInBathPerClusterPoint;
 		} else {
-			unimplemented("readline",label);
+			std::cerr<<"WARNING: readline unrecognized "<<label<<"\n";
+			io_.readline(x,label);	
 		}
 	}
 
@@ -192,7 +199,7 @@ public:
 
 	void read(VectorRealType& v, PsimagLite::String label)
 	{
-		if (label == "hubbardU") {
+		if (label == "hubbardU" || label == "FiniteLoops") {
 			io_.read(v,label);
 			return;
 		}
@@ -218,15 +225,8 @@ public:
 	{
 		if (label == "GeometryKind=") {
 			x = geometry_.label(lastTermSeen_);
-		} else if (label == "GeometryOptions=" ||
-		           label == "TSPProductOrSum=" ||
-		           label == "TSPOperator=" ||
-		           label == "CorrectionVectorAlgorithm=" ||
-		           label == "Model=" ||
-		           label == "SolverOptions=") {
+		} else { 
 			io_.readline(x,label);
-		} else {
-			unimplemented("readline",label);
 		}
 	}
 
@@ -470,6 +470,7 @@ private:
 	{
 		PsimagLite::String str = "unimplemented " + functionName + "(...)";
 		str += " for label " + label + "\n";
+		std::cerr<<"ERROR: "<<str;
 		throw PsimagLite::RuntimeError(str);
 	}
 
@@ -478,7 +479,7 @@ private:
 	const MatrixType& tBathCluster_;
 	HubbardParamsType hubbardParams_;
 	const GeometryType& geometry_;
-	typename InputNgType::Readable& io_;
+	typename InputNgType::Readable io_;
 	SizeType lastTermSeen_;
 	SizeType connectorsCounter_;
 	SizeType electronsUp_;
