@@ -92,6 +92,8 @@ public:
 	  modelSelector_(paramsDmrg_.model),
 	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_))
 	{
+		paramsDmrg_.electronsUp = myInput_.electrons(DcaToDmrgType::SPIN_UP);
+		paramsDmrg_.electronsDown = myInput_.electrons(DcaToDmrgType::SPIN_DOWN);
 		GsParamsType tsp(myInput_,model_);
 		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
 		dmrgSolver.main(geometry2_);

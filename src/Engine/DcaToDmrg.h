@@ -323,7 +323,9 @@ private:
 		onp1--;
 		assert(!(onp1 & 1));
 		onp1 = static_cast<SizeType>(onp1*0.5);
-		if (electronsUp_ > onp1 || electronsDown_ > onp1) {
+		if (electronsUp_ > onp1 ||
+		    electronsDown_ > onp1 ||
+		    electronsDown_ > electronsUp_) {
 			electronsUp_ = electronsDown_ = 0;
 		}
 	}
