@@ -28,6 +28,13 @@ struct DcaParameters {
 		io.readline(dcaSolver,"DcaSolver=");
 		io.readline(imagIterations,"DcaMatsubaraIterations=");
 		io.readline(realIterations,"DcaRealFreqIterations=");
+		io.readline(dcaOptions,"DcaOptions=");
+
+		nthreads = 1;
+		try {
+			io.readline(nthreads,"Threads=");
+		} catch (std::exception& e) {}
+
 		try {
 			io.read(potentialV,"potentialV");
 		} catch (std::exception& e) {
@@ -45,12 +52,14 @@ struct DcaParameters {
 	SizeType numberOfMatsubaras;
 	SizeType nofPointsInBathPerClusterPoint;
 	SizeType orbitals;
+	SizeType nthreads;
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;
 	RealType mu;
 	RealType delta;
 	PsimagLite::String dcaSolver;
+	PsimagLite::String dcaOptions;
 	typename PsimagLite::Vector<RealType>::Type potentialV;
 }; // struct DcaParameters
 

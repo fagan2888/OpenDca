@@ -13,7 +13,7 @@ int main(int argc, char *argv[])
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::InputNg<Dmrg::InputCheck> InputNgType;
 	typedef PsimagLite::Geometry<ComplexType,
-	                             typename InputNgType::Readable,
+	                             InputNgType::Readable,
 	                             Dmrg::ProgramGlobals> GeometryType;
 	typedef OpenDca::DispersionSimple<RealType, GeometryType> DispersionType;
 	typedef OpenDca::DcaLoop<DispersionType,InputNgType> DcaLoopType;
@@ -55,6 +55,12 @@ int main(int argc, char *argv[])
 	InputNgType::Readable io(ioWriteable);
 
 	ParametersType params(io);
+#ifndef USE_PTHREADS
+        inputCheck.checkForThreads(params.nthreads);
+#endif
+
+        ConcurrencyType::npthreads = params.nthreads;
+
 	DcaLoopType dcaLoop(params,io);
 
 	dcaLoop.main(OpenDca::FREQ_MATSUBARA,params.imagIterations);

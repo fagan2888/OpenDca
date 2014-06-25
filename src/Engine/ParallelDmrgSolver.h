@@ -4,6 +4,8 @@
 #include "Concurrency.h"
 #include "LanczosSolver.h"
 #include "Matrix.h"
+#include "IoSimple.h"
+#include "ContinuedFractionCollection.h"
 #include "../../dmrgpp/src/Engine/ParametersDmrgSolver.h"
 #include "../../dmrgpp/src/Engine/VectorWithOffsets.h"
 #include "../../dmrgpp/src/Engine/MatrixVectorOnTheFly.h"
@@ -71,11 +73,17 @@ class ParallelDmrgSolver {
 	typedef Dmrg::DmrgSolver<TargetingType> SolverType;
 	typedef Dmrg::DmrgSolver<TargetingGroundStateType> SolverGroundStateType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
+	typedef PsimagLite::TridiagonalMatrix<RealType> TridiagonalMatrixType;
+	typedef PsimagLite::ContinuedFraction<TridiagonalMatrixType> ContinuedFractionType;
+	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType>
+	ContinuedFractionCollectionType;
 
 public:
 
 	typedef Run RunType;
 	typedef typename PsimagLite::Vector<RunType>::Type VectorRunType;
+
+	static const SizeType freqDependent = 0;
 
 	ParallelDmrgSolver(DcaToDmrgType& myInput,
 	                              const VaryingGeometryType& geometry2,
@@ -128,6 +136,7 @@ public:
 
 			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
 			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
+			if (!freqDependent) omegaValue = 0;
 			tsp.omega(omegaValue);
 
 			SolverType dmrgSolver(model_,tsp,myInput_);
@@ -135,12 +144,7 @@ public:
 
 			energy_ = dmrgSolver.energy();
 
-			if (gf_.n_row() == 0) return;
-			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
-				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
-				gf_(run.omegaIndex,
-				    run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
-			}
+			accumulateGf(run,dmrgSolver);
 		}
 
 		PsimagLite::MPI::allReduce(gf_);
@@ -152,6 +156,33 @@ public:
 	}
 
 private:
+
+	void accumulateGf(const RunType& run,
+	                  const SolverType& dmrgSolver)
+	{
+		if (gf_.n_row() == 0) return;
+
+		SizeType clusterSites = gf_.n_col();
+
+		if (freqDependent) {
+			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
+				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
+				gf_(run.omegaIndex,
+				    run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
+			}
+
+			return;
+		}
+
+		PsimagLite::IoSimple::In io(myInput_.outputFile());
+		ContinuedFractionCollectionType cf(io);
+		typename ContinuedFractionCollectionType::PlotDataType v;
+		cf.plot(v,*plotParams_);
+		for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
+			for (SizeType x=0;x<v.size();x++)
+				gf_(x,run.site + site2*clusterSites) += v[x].second;
+		}
+	}
 
 	DcaToDmrgType& myInput_;
 	const VaryingGeometryType& geometry2_;

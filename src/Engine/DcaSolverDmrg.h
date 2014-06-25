@@ -22,6 +22,8 @@ public:
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 	typedef ParallelDmrgSolver<DcaSolverBaseType> ParallelDmrgSolverType;
 
+	static const SizeType freqDependent =  ParallelDmrgSolverType::freqDependent;
+
 	DcaSolverDmrg(DcaToDmrgType& myInput,
 	                        const VaryingGeometryType& geometry2,
 	                        typename InputNgType::Readable& io)
@@ -55,7 +57,8 @@ public:
 			return;
 
 		VectorRunType runs;
-		for (SizeType x = 0; x < gf.n_row(); ++x) {
+		SizeType total = (freqDependent) ? gf.n_row() : 1;
+		for (SizeType x = 0; x < total; ++x) {
 			RunType run1(sites[0],x,RunType::TYPE_NORMAL);
 			runs.push_back(run1);
 			RunType run2(sites[0],x,RunType::TYPE_DAGGER);
