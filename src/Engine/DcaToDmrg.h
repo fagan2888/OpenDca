@@ -71,7 +71,6 @@ public:
 	{
 		io_.readline(electronsUp_,"TargetElectronsUp=");
 		io_.readline(electronsDown_,"TargetElectronsDown=");
-		io_.readline(outputFile_,"OutputFile=");
 
 		SizeType totalSites = params_.largeKs*(1+ params_.nofPointsInBathPerClusterPoint);
 		SizeType onp1 = 2*params_.orbitals * totalSites + 1;
@@ -188,8 +187,6 @@ public:
 
 	void readline(RealType& x,PsimagLite::String label)
 	{
-		if (label == "OutputFile=")
-			throw PsimagLite::RuntimeError("readline for " + label + "\n");
 		io_.readline(x,label);
 	}
 
@@ -291,8 +288,6 @@ public:
 
 		return r2 -NcOver2 + alpha*nBath + Nc + NcOver2*nBath;
 	}
-
-	PsimagLite::String outputFile() const { return outputFile_; }
 
 	SizeType muFeatureSize() const
 	{
@@ -489,7 +484,6 @@ private:
 	SizeType electronsUp_;
 	SizeType electronsDown_;
 	VectorSizeType muFeatureOffset_;
-	PsimagLite::String outputFile_;
 }; // class DcaToDmrg
 
 }

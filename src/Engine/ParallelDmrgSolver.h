@@ -27,11 +27,12 @@ struct Run {
 
 	enum EnumType {TYPE_NORMAL, TYPE_DAGGER};
 
-	Run(SizeType site1, SizeType index1, EnumType type1)
-	: site(site1),omegaIndex(index1),dynamicDmrgType(type1)
+	Run(SizeType site1, SizeType orbital1, SizeType index1, EnumType type1)
+	: site(site1),orbital(orbital1),omegaIndex(index1),dynamicDmrgType(type1)
 	{}
 
 	SizeType site;
+	SizeType orbital;
 	SizeType omegaIndex;
 	EnumType dynamicDmrgType;
 };
@@ -75,8 +76,8 @@ class ParallelDmrgSolver {
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 	typedef PsimagLite::TridiagonalMatrix<RealType> TridiagonalMatrixType;
 	typedef PsimagLite::ContinuedFraction<TridiagonalMatrixType> ContinuedFractionType;
-	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType>
-	ContinuedFractionCollectionType;
+//	typedef PsimagLite::ContinuedFractionCollection<ContinuedFractionType>
+//	ContinuedFractionCollectionType;
 
 public:
 
@@ -98,8 +99,10 @@ public:
 	  runs_(runs),
 	  plotParams_(plotParams),
 	  modelSelector_(paramsDmrg_.model),
-	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_))
+	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_)),
+	  orbitals_(1)
 	{
+		myInput_.readline(orbitals_,"Orbitals=");
 		paramsDmrg_.electronsUp = myInput_.electrons(DcaToDmrgType::SPIN_UP);
 		paramsDmrg_.electronsDown = myInput_.electrons(DcaToDmrgType::SPIN_DOWN);
 		GsParamsType tsp(myInput_,model_);
@@ -109,9 +112,9 @@ public:
 	}
 
 	void thread_function_(SizeType threadNum,
-	                                    SizeType blockSize,
-	                                    SizeType total,
-	                                    pthread_mutex_t* myMutex)
+	                      SizeType blockSize,
+	                      SizeType total,
+	                      pthread_mutex_t* myMutex)
 	{
 		SizeType mpiRank = PsimagLite::MPI::commRank(PsimagLite::MPI::COMM_WORLD);
 		SizeType npthreads = PsimagLite::Concurrency::npthreads;
@@ -144,7 +147,7 @@ public:
 
 			energy_ = dmrgSolver.energy();
 
-			accumulateGf(run,dmrgSolver);
+			accumulateGf(run,dmrgSolver,paramsDmrg_.filename);
 		}
 
 		PsimagLite::MPI::allReduce(gf_);
@@ -158,30 +161,29 @@ public:
 private:
 
 	void accumulateGf(const RunType& run,
-	                  const SolverType& dmrgSolver)
+	                  const SolverType& dmrgSolver,
+	                  PsimagLite::String filename)
 	{
 		if (gf_.n_row() == 0) return;
 
-		SizeType clusterSites = gf_.n_col();
-
 		if (freqDependent) {
-			for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
-				SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(site2);
-				gf_(run.omegaIndex,
-				    run.site + site2*clusterSites) += dmrgSolver.inSitu(site2Dmrg);
-			}
+			SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(run.site);
+			gf_(run.omegaIndex,
+			    run.orbital + run.site*orbitals_) += dmrgSolver.inSitu(site2Dmrg);
 
 			return;
 		}
 
-		PsimagLite::IoSimple::In io(myInput_.outputFile());
-		ContinuedFractionCollectionType cf(io);
-		typename ContinuedFractionCollectionType::PlotDataType v;
+		PsimagLite::String str = "#Avector";
+		PsimagLite::IoSimple::In io(filename);
+		io.advance(str,PsimagLite::IoSimple::In::LAST_INSTANCE);
+		ContinuedFractionType cf(io);
+		typename ContinuedFractionType::PlotDataType v;
 		cf.plot(v,*plotParams_);
-		for (SizeType site2 = 0; site2 < clusterSites; ++site2) {
-			for (SizeType x=0;x<v.size();x++)
-				gf_(x,run.site + site2*clusterSites) += v[x].second;
-		}
+		std::cout<<"ParallelDmrgSolver run.orbital = "<<run.orbital;
+		std::cout<<" run.site = "<<run.site<<" orbitals= "<<orbitals_<<"\n";
+		for (SizeType x=0;x<v.size();x++)
+			gf_(x,run.orbital + run.site*orbitals_) += v[x].second;
 	}
 
 	DcaToDmrgType& myInput_;
@@ -193,6 +195,7 @@ private:
 	Dmrg::ModelSelector<ModelType> modelSelector_;
 	const ModelType& model_;
 	RealType energy_;
+	SizeType orbitals_;
 };
 
 }

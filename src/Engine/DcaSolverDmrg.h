@@ -25,8 +25,8 @@ public:
 	static const SizeType freqDependent =  ParallelDmrgSolverType::freqDependent;
 
 	DcaSolverDmrg(DcaToDmrgType& myInput,
-	                        const VaryingGeometryType& geometry2,
-	                        typename InputNgType::Readable& io)
+	              const VaryingGeometryType& geometry2,
+	              typename InputNgType::Readable& io)
 	 : myInput_(myInput),
 	   geometry2_(geometry2),
 	   io_(io),
@@ -56,13 +56,17 @@ public:
 		if (std::find(sitesDone_.begin(),sitesDone_.end(),sites[0]) != sitesDone_.end())
 			return;
 
+		SizeType orbitals = 1;
+		io_.readline(orbitals,"Orbitals=");
 		VectorRunType runs;
 		SizeType total = (freqDependent) ? gf.n_row() : 1;
-		for (SizeType x = 0; x < total; ++x) {
-			RunType run1(sites[0],x,RunType::TYPE_NORMAL);
-			runs.push_back(run1);
-			RunType run2(sites[0],x,RunType::TYPE_DAGGER);
-			runs.push_back(run2);
+		for (SizeType orb = 0; orb < orbitals; ++orb) {
+			for (SizeType x = 0; x < total; ++x) {
+				RunType run1(sites[0],orb,x,RunType::TYPE_NORMAL);
+				runs.push_back(run1);
+				RunType run2(sites[0],orb,x,RunType::TYPE_DAGGER);
+				runs.push_back(run2);
+			}
 		}
 
 		solveForSite(gf,runs,&plotParams);
