@@ -51,6 +51,9 @@ class ParallelDmrgSolver {
 	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
 	typedef Dmrg::Basis<SparseMatrixType> BasisType;
 	typedef Dmrg::Operators<BasisType> OperatorsType;
+	typedef typename OperatorsType::OperatorType OperatorType;
+	typedef typename OperatorType::PairType PairType;
+	typedef typename OperatorType::Su2RelatedType Su2RelatedType;
 	typedef Dmrg::BasisWithOperators<OperatorsType> BasisWithOperatorsType;
 	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
 	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
@@ -97,10 +100,11 @@ public:
 	  plotParams_(plotParams),
 	  modelSelector_(paramsDmrg_.model),
 	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_)),
-	  orbitals_(1),
 	  tsp_(myInput_,model_)
 	{
-		myInput_.readline(orbitals_,"Orbitals=");
+		if (geometry2.label(0) != "star")
+			throw PsimagLite::RuntimeError("ParallelDmrgSolver: only geometry star\n");
+
 		paramsDmrg_.electronsUp = myInput_.electrons(DcaToDmrgType::SPIN_UP);
 		paramsDmrg_.electronsDown = myInput_.electrons(DcaToDmrgType::SPIN_DOWN);
 		GsParamsType tsp(myInput_,model_);
@@ -126,19 +130,38 @@ public:
 			if (px >= total || px >= runs_.size()) continue;
 			const RunType& run = runs_[px];
 
-			tsp_.type( (run.dynamicDmrgType == RunType::TYPE_NORMAL) ? 0 : 1);
-			if (run.dynamicDmrgType == RunType::TYPE_DAGGER)
-				tsp_.transposeConjugate(0);
 
-			SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
-			tsp_.setSite(1,siteDmrg);
+			MatrixType matC = model_.naturalOperator("c",0,run.orbital);
+			SizeType n = matC.n_row();
+			MatrixType matZero(n,n);
+			if (run.dynamicDmrgType == RunType::TYPE_DAGGER)
+				matC = transposeConjugate(matC);
+			Su2RelatedType su2Related1;
+			Su2RelatedType su2Related2;
+			OperatorType opZero(matZero,
+			                    -1,
+			                    PairType(0,0),
+			                    1,
+			                    su2Related1);
+			OperatorType opC(matC,
+			                 -1,
+			                 PairType(0,0),
+			                 1,
+			                 su2Related2);
+
+			tsp_.setOperator(0,1,opZero);
+			tsp_.setOperator(1,0,opC);
+
+			tsp_.type( (run.dynamicDmrgType == RunType::TYPE_NORMAL) ? 0 : 1);
+
+			assert(run.site == 0);
+			//SizeType siteDmrg = myInput_.dcaIndexToDmrgIndex(run.site);
+			//tsp_.setSite(1,siteDmrg);
 
 			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
 			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
 			if (!freqDependent) omegaValue = 0;
 			tsp_.omega(omegaValue);
-
-			// FIXME: ADJUST tsp_ here
 
 			SolverType dmrgSolver(model_,tsp_,myInput_);
 			dmrgSolver.main(geometry2_);
@@ -164,10 +187,12 @@ private:
 	{
 		if (gf_.n_row() == 0) return;
 
+		SizeType Nc = 1;
+
 		if (freqDependent) {
 			SizeType site2Dmrg = myInput_.dcaIndexToDmrgIndex(run.site);
-			gf_(run.omegaIndex,
-			    run.orbital + run.site*orbitals_) += dmrgSolver.inSitu(site2Dmrg);
+			gf_(run.omegaIndex,run.site + run.site*Nc + run.orbital*Nc*Nc) +=
+			        dmrgSolver.inSitu(site2Dmrg);
 
 			return;
 		}
@@ -179,9 +204,25 @@ private:
 		typename ContinuedFractionType::PlotDataType v;
 		cf.plot(v,*plotParams_);
 		std::cout<<"ParallelDmrgSolver run.orbital = "<<run.orbital;
-		std::cout<<" run.site = "<<run.site<<" orbitals= "<<orbitals_<<"\n";
-		for (SizeType x=0;x<v.size();x++)
-			gf_(x,run.orbital + run.site*orbitals_) += v[x].second;
+		std::cout<<" run.site = "<<run.site<<"\n";
+		for (SizeType x=0;x<v.size();x++) {
+			ComplexType tmp = dmrgFilterY(v[x].second);
+			SizeType x2 = dmrgFilterX(x,gf_.n_row());
+			gf_(x2,run.site + run.site*Nc + run.orbital*Nc*Nc) += tmp;
+		}
+	}
+
+	SizeType dmrgFilterX(int x, int total) const
+	{
+		assert(x < total);
+		return total - x - 1;
+	}
+
+	ComplexType dmrgFilterY(ComplexType z) const
+	{
+		z.real() *= (-1);
+		z.imag() *= (1);
+		return z;
 	}
 
 	DcaToDmrgType& myInput_;
@@ -193,7 +234,6 @@ private:
 	Dmrg::ModelSelector<ModelType> modelSelector_;
 	const ModelType& model_;
 	RealType energy_;
-	SizeType orbitals_;
 	TargettingParamsType tsp_;
 };
 
