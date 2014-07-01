@@ -1,5 +1,5 @@
  
-Licensing
+# Licensing
 The full software license for OpenDca version 1.0.0 
 can be found in
 file LICENSE. 
@@ -11,19 +11,19 @@ work .
 
 -------------------------------------------------------------------------------
 
-Hash of the latest commit is also posted at
+# Hash of the latest commit is also posted at
 
 https://web.ornl.gov/~gz1/hashes.html
 
 -------------------------------------------------------------------------------
 
-How To Cite This Work
+# How To Cite This Work
 
 TBW.
 
 -------------------------------------------------------------------------------
 
-DISCLAIMER
+# DISCLAIMER
 
 THE SOFTWARE IS SUPPLIED BY THE COPYRIGHT HOLDERS AND
 CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
@@ -50,9 +50,9 @@ DISCLOSED WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 
 -------------------------------------------------------------------------------
 
-Building and Running OpenDca
+# Building and Running OpenDca
 
-Required Software
+## Required Software
 
 * GNU C++
 * The LAPACK and BLAS libraries
@@ -60,20 +60,20 @@ Required Software
 * PsimagLite (see below)
 * DMRG++ (see below)
 * Lanczos++ (see below)
-* MsGeometry (see below)
 
-Optional Software
+## Optional Software
 
 * make or gmake (only needed to use the Makefile)
 * perl (may be needed to run some auxiliary script)
 
-Quick Start
+## Quick Start
 
 1. Use your distribution repository tool to install gcc with support for C++,
 the LAPACK and BLAS libraries, the gsl library, make, and git 
 if you don't have them.
 
 2. Issue
+
 ```
 cd someDirectory/
 git clone https://github.com/g1257/PsimagLite.git
@@ -82,10 +82,8 @@ git clone https://github.com/g1257/LanczosPlusPlus.git
 git clone https://github.com/g1257/OpenDca.git
 ```
 
-3. Compile msGeometry
-Not needed if running with star geometry.
+3. Compile PsimagLite
 
-4. Compile PsimagLite
 ```
 cd PsimagLite/lib/
 make -f Makefile.sample
@@ -93,13 +91,30 @@ cd ../../
 ```
 
 4. Now issue
+
 ```
 cd OpenDca/src/
 make
 ```
+
 5. You can run it with
+
 ```
-./openDca -f TestSuite/inputs/input1.inp
+./openDca -f TestSuite/inputs/input1.inp &> output
 ```
--------------------------------------------------------------------------------
+
+6. Post-process with
+
+```
+perl ../scripts/multiExtract.pl output 0 3 100 200 -10 0.01
+```
+
+Run 
+
+```
+perl ../scripts/multiExtract.pl
+```
+
+to see the meaning of the arguments.
+
 

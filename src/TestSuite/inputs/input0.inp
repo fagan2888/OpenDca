@@ -8,6 +8,7 @@ BathSitesPerSite=2
 Connectors 2 1.0 1.0
 Connectors 2 1.0 1.0
 Connectors 8 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035 -0.672705035
+Orbitals=1
 
 Model=HubbardOneBand
 hubbardU        12 0 0 0 0 8 8  8 8 0 0 0 0
@@ -42,6 +43,7 @@ FERMIONSIGN=-1
 JMVALUES 0 0
 AngularFactor=1
 
+DcaOptions=none
 DcaOmegaTotal=10
 DcaLargeKs=4
 DcaNumberOfMatsubaras=10
@@ -52,6 +54,6 @@ DcaBeta=10
 DcaMu=0
 DcaDelta=0.1
 DcaSolver=Lanczos
-DcaIterations=2
-
+DcaMatsubaraIterations=10
+DcaRealFreqIterations=0
 
