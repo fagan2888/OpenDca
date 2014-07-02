@@ -1,3 +1,4 @@
+# Quick Start
  
 # Licensing
 The full software license for OpenDca version 1.0.0 
@@ -9,19 +10,16 @@ You are welcomed to use it and publish data
 obtained with OpenDca. If you do, please cite this
 work .
 
--------------------------------------------------------------------------------
 
 # Hash of the latest commit is also posted at
 
 https://web.ornl.gov/~gz1/hashes.html
 
--------------------------------------------------------------------------------
 
 # How To Cite This Work
 
 TBW.
 
--------------------------------------------------------------------------------
 
 # DISCLAIMER
 
@@ -48,7 +46,6 @@ ANY OF THEIR EMPLOYEES, REPRESENTS THAT THE USE OF ANY
 INFORMATION, DATA, APPARATUS, PRODUCT, OR PROCESS
 DISCLOSED WOULD NOT INFRINGE PRIVATELY OWNED RIGHTS.
 
--------------------------------------------------------------------------------
 
 # Building and Running OpenDca
 
@@ -74,46 +71,40 @@ if you don't have them.
 
 2. Issue
 
-```
-cd someDirectory/
-git clone https://github.com/g1257/PsimagLite.git
-git clone https://github.com/g1257/dmrgpp.git
-git clone https://github.com/g1257/LanczosPlusPlus.git
-git clone https://github.com/g1257/OpenDca.git
-```
+    cd someDirectory/
+
+    git clone https://github.com/g1257/PsimagLite.git
+
+    git clone https://github.com/g1257/dmrgpp.git
+
+    git clone https://github.com/g1257/LanczosPlusPlus.git
+
+    git clone https://github.com/g1257/OpenDca.git
 
 3. Compile PsimagLite
 
-```
-cd PsimagLite/lib/
-make -f Makefile.sample
-cd ../../
-```
+    cd PsimagLite/lib/
+
+    make -f Makefile.sample
+
+    cd ../../
 
 4. Now issue
 
-```
-cd OpenDca/src/
-make
-```
+    cd OpenDca/src/
+    make
 
 5. You can run it with
 
-```
-./openDca -f TestSuite/inputs/input1.inp &> output
-```
+    ./openDca -f TestSuite/inputs/input1.inp &> output
 
 6. Post-process with
 
-```
-perl ../scripts/multiExtract.pl output 0 3 100 200 -10 0.01
-```
+    perl ../scripts/multiExtract.pl output 0 3 100 200 -10 0.01
 
 Run 
 
-```
-perl ../scripts/multiExtract.pl
-```
+    perl ../scripts/multiExtract.pl
 
 to see the meaning of the arguments.
 
