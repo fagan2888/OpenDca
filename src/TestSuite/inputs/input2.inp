@@ -16,11 +16,14 @@ Connectors 3 3
 0 0 0.2
 
 hubbardU        4 1.0 0.7 0.8 0.1	
-potentialV     18 -3 0 2 
+potentialV     18 
+		  -3 0 2 
   
                   -3 0 2
 
                   -3 0 2
+		  
+		  
 
                   -3 0 2
 

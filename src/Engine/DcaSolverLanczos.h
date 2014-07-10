@@ -9,6 +9,7 @@
 #include "../../LanczosPlusPlus/src/Engine/BasisBase.h"
 #include "../../LanczosPlusPlus/src/Engine/ModelSelector.h"
 #include "DcaSolverBase.h"
+#include "../../PsimagLite/src/FreqEnum.h"
 
 namespace OpenDca {
 
@@ -71,10 +72,13 @@ public:
 		std::cout<<"#lanczos indexing (i="<<sitesLanczos[0];
 		std::cout<<",j="<<sitesLanczos[1]<<")\n";
 
+		SizeType matsubaras = plotParams.numberOfMatsubaras;
+		PsimagLite::FreqEnum freqEnum = (matsubaras == 0) ? PsimagLite::FREQ_REAL : PsimagLite::FREQ_MATSUBARA;
+
 		SizeType norbitals = maxOrbitals(model_);
 		for (SizeType orb1 = 0;orb1 < norbitals; ++orb1) {
 			SizeType orb2 = orb1;
-			ContinuedFractionCollectionType cfCollection;
+			ContinuedFractionCollectionType cfCollection(freqEnum);
 			engine_.spectralFunction(cfCollection,
 			                         gfOp,
 			                         sitesLanczos[0],

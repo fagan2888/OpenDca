@@ -129,6 +129,17 @@ public:
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
 
+		MatrixType gfClusterMatsubara(gckfsc_.n_row(),gckfsc_.n_col());
+		hilbertTransfFromReal(gfClusterMatsubara,gfCluster);
+		std::cout<<"#gfMatsubara\n";
+                for (SizeType i=0;i<gfClusterMatsubara.n_row();++i) {
+                        RealType wn = matsubara(i);
+                        std::cout<<wn<<" ";
+                        for (SizeType j=0;j<gfClusterMatsubara.n_col();++j)
+                                std::cout<<gfClusterMatsubara(i,j)<<" ";
+                        std::cout<<"\n";
+                }
+
 		const MatrixType& p = effectiveHamiltonian.andersonParameters();
 
 		getGammaKOmega(gammaOmegaRealOrImag,p,freqEnum);

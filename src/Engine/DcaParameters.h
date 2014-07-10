@@ -12,11 +12,11 @@ struct DcaParameters {
 	/** @class hide_DcaParameters
 	  - Orbitals=integer
 	  - BathSitesPerSite=integer
-	  - DcaOmegaBegin=real Start of real freq. domain 
+	  - DcaOmegaBegin=real Start of real freq. domain
 	  - DcaOmegaTotal=integer Total number of real frequencies
 	  - DcaOmegaStep=real Step in real freq. domain
 	  - DcaLargeKs=integer Number of ``cluster'' points (exclude the bath here)
-	  - DcaNumberOfMatsubaras=integer Total number of matsubara freq.
+	  - NumberOfMatsubaras=integer Total number of matsubara freq.
 	  - DcaFinePoints=integer Number of points for the coarse-graining. This is a
 	    maximum, and the geometry mesh will refine it if needed. Must be a perfect square.
 	  - DcaBeta=real Inverse temperature in hopping units
@@ -29,7 +29,7 @@ struct DcaParameters {
 	    with real freq.
 	  - DcaOptions=string Either none or nomufeature
 	  - Threads=integer [Optional]
-	*/	
+	*/
 	template<typename SomeInputType>
 	DcaParameters(SomeInputType& io)
 	{
@@ -41,7 +41,7 @@ struct DcaParameters {
 		io.readline(omegas,"DcaOmegaTotal=");
 		io.readline(omegaStep,"DcaOmegaStep=");
 		io.readline(largeKs,"DcaLargeKs=");
-		io.readline(numberOfMatsubaras,"DcaNumberOfMatsubaras=");
+		io.readline(numberOfMatsubaras,"NumberOfMatsubaras=");
 		io.readline(smallKs,"DcaFinePoints=");
 		io.readline(beta,"DcaBeta=");
 		io.readline(mu,"DcaMu=");

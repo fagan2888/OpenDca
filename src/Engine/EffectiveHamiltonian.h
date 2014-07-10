@@ -155,10 +155,16 @@ public:
 
 		RealType omegaEnd = params_.omegas * params_.omegaStep + params_.omegaBegin;
 
+		SizeType matsubaras = params_.numberOfMatsubaras;
+		if (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos)
+			matsubaras = 0;
+
 		PlotParamsType plotParams(params_.omegaBegin,
 		                          omegaEnd,
 		                          params_.omegaStep,
-		                          params_.delta);
+		                          params_.delta,
+		                          params_.beta,
+		                          matsubaras);
 
 		SizeType Nc = params_.largeKs;
 		VectorSizeType sites(2);

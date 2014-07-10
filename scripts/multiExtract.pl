@@ -51,6 +51,12 @@ deleteColumn("$outfile",0);
 #commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
+$outfile = createFile($file,"gfMatsubara",$it);
+system("perl extract.pl \"#gfMatsubara\" $it < $file > $outfile");
+deleteColumn("$outfile",0);
+#commentLines("$outfile",1);
+addFreq("$outfile","imag");
+
 sub commentLines
 {
 	my ($file,$l) = @_;
