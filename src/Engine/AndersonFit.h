@@ -36,7 +36,7 @@ public:
 
 		for (SizeType n=0;n<totaln;++n) {
 			ComplexType ctmp = gf_[n];
-			ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
+			ComplexType ctmp2=andersonG0(p_,matsubaras_[n],0.0); //,params_.mu);
 			ComplexType z = ctmp - ctmp2;
 			RealType tmp2 = std::real(z)*std::real(z) + std::imag(z)*std::imag(z);
 			tmp += tmp2;
@@ -65,11 +65,11 @@ public:
 			RealType tmp=0.0;
 			for (SizeType n=0;n<totaln;++n) {
 				ComplexType ctmp = gf_[n];
-				ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
+				ComplexType ctmp2=andersonG0(p_,matsubaras_[n],0.0); //params_.mu);
 				ComplexType tmp2 = ctmp - ctmp2;
 				ComplexType g0Gradient = andersonG0gradient(p_,
 				                                            matsubaras_[n],
-				                                            params_.mu,
+				                                            0.0,//params_.mu,
 				                                            i);
 				tmp += (std::real(tmp2) * std::real(g0Gradient) +
 				        std::imag(tmp2) * std::imag(g0Gradient));

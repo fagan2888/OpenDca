@@ -121,7 +121,7 @@ private:
 	ComplexType lanczosFilterY(ComplexType z) const
 	{
 		z.real() *= (-0.25);
-		z.imag() *= (0.25);
+		z.imag() *= (-0.25);
 		return z;
 	}
 

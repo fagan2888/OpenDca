@@ -61,7 +61,10 @@ public:
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
-		MatrixType gfcluster(params_.omegas,largeKs*largeKs*params_.orbitals);
+		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
+		SizeType omegasRealOrImag = (lanczosReal) ? params_.omegas :
+		                                            params_.numberOfMatsubaras;
+		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
 		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs*norb);
 		RealType sigmaNorm = 0;
 
@@ -110,6 +113,7 @@ public:
 	                const VectorRealType& ekbar,
 	                FreqEnum freqEnum)
 	{
+		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc_.n_row(),gckfsc_.n_col());
 		MatrixType gfLesser;
@@ -129,16 +133,25 @@ public:
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
 
-		MatrixType gfClusterMatsubara(gckfsc_.n_row(),gckfsc_.n_col());
-		hilbertTransfFromReal(gfClusterMatsubara,gfCluster);
+		MatrixType* gfClusterMatsubara = 0;
+
+		if (lanczosReal) {
+			gfClusterMatsubara = new MatrixType(gckfsc_.n_row(),gckfsc_.n_col());
+			hilbertTransfFromReal(*gfClusterMatsubara,gfCluster);
+		} else {
+			gfClusterMatsubara = &gfCluster;
+		}
+
 		std::cout<<"#gfMatsubara\n";
-                for (SizeType i=0;i<gfClusterMatsubara.n_row();++i) {
+                for (SizeType i=0;i<gfClusterMatsubara->n_row();++i) {
                         RealType wn = matsubara(i);
                         std::cout<<wn<<" ";
-                        for (SizeType j=0;j<gfClusterMatsubara.n_col();++j)
-                                std::cout<<gfClusterMatsubara(i,j)<<" ";
+                        for (SizeType j=0;j<gfClusterMatsubara->n_col();++j)
+                                std::cout<<gfClusterMatsubara->operator()(i,j)<<" ";
                         std::cout<<"\n";
                 }
+
+		if (lanczosReal) delete gfClusterMatsubara;
 
 		const MatrixType& p = effectiveHamiltonian.andersonParameters();
 
@@ -162,8 +175,8 @@ private:
 			gckf[omegaIndex] = 0.0;
 			if (gamma1 != gamma2) continue;
 			for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde) {
-				ComplexType tmp = - dispersion_(K,gamma1,gamma2,ktilde)
-				                  - sigma_(omegaIndex,index);
+				ComplexType tmp = -dispersion_(K,gamma1,gamma2,ktilde)
+				                  -sigma_(omegaIndex,index);
 				tmp += (params_.mu + omegaValue(omegaIndex,freqEnum));
 				gckf[omegaIndex] += 1.0/tmp;
 			}
@@ -307,6 +320,7 @@ private:
 	                   const VectorRealType& epsbar,
 	                   FreqEnum freqEnum)
 	{
+		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
 		MatrixType& sigma = sigma_;
 		MatrixType data(gfCluster.n_row(),params_.largeKs*params_.orbitals);
 
@@ -315,8 +329,9 @@ private:
 
 		std::cout<<"#DATA\n";
 		for (SizeType i = 0;i < data.n_row(); ++i) {
-			RealType realOmega = params_.omegaBegin + params_.omegaStep * i;
-			std::cout<<realOmega<<" ";
+			ComplexType omega = omegaValue(i,(lanczosReal) ? FREQ_REAL : FREQ_MATSUBARA);
+			RealType omegaRealOrImag = (lanczosReal) ? std::real(omega) : std::imag(omega);
+			std::cout<<omega<<" ";
 			for (SizeType j = 0;j < data.n_col(); ++j) {
 				//if (std::imag(data(i,j))>0) data(i,j)=std::real(data(i,j));
 				std::cout<<data(i,j)<<" ";
@@ -326,7 +341,8 @@ private:
 		}
 
 		MatrixType data2(omegaSize(FREQ_MATSUBARA),data.n_col());
-		if (freqEnum == FREQ_MATSUBARA)
+
+		if (freqEnum == FREQ_MATSUBARA && lanczosReal)
 			hilbertTransfFromReal(data2,data);
 		else
 			data2 = data;
