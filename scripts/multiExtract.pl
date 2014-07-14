@@ -31,8 +31,8 @@ system("perl extract.pl \"#gfcluster\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","real");
 
-$outfile = createFile($file,"data2",$it);
-system("perl extract.pl \"#DATA2\" $it < $file > $outfile");
+$outfile = createFile($file,"G0",$it);
+system("perl extract.pl \"#G0\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
