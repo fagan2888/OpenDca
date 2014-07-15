@@ -5,6 +5,8 @@
 #include "Concurrency.h"
 #include "EffectiveHamiltonian.h"
 #include "FreqEnum.h"
+#include "DensityFunction.h"
+#include "RootFindingBisection.h"
 
 namespace OpenDca {
 
@@ -84,8 +86,13 @@ public:
 			std::cout<<"sigma\n";
 			std::cout<<sigma_;
 			std::cout<<"Dca iteration= "<<i<<" error in sigma= "<<fabs(dcaError)<<"\n";
+			std::cout<<"Old mu= "<<params_.mu<<" ";
+			params_.mu = adjChemPot();
+			std::cout<<"New mu= "<<params_.mu<<"\n";
 		}
 	}
+
+private:
 
 	void makeGf(FreqEnum freqEnum)
 	{
@@ -159,8 +166,6 @@ public:
 
 		getGammaKOmega(gammaOmegaRealOrImag,p,freqEnum);
 	}
-
-private:
 
 	void makeGf(VectorType& gckf,
 	            SizeType K,
@@ -452,6 +457,17 @@ private:
 		SizeType index = K + gamma1*geometry_.numberOfSites();
 		assert(index< params_.potentialV.size());
 		return params_.potentialV[index];
+	}
+
+	RealType adjChemPot() const
+	{
+		typedef DensityFunction DensityFunctionType;
+		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
+		DensityFunctionType densityFunction;
+		RootFindingType  rootFinding(densityFunction);
+		RealType mu = params_.mu;
+		rootFinding(mu);
+		return mu;
 	}
 
 	const ParametersType& params_;

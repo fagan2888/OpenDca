@@ -77,7 +77,7 @@ struct DcaParameters {
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;
-	RealType mu;
+	mutable RealType mu;
 	RealType delta;
 	PsimagLite::String dcaSolver;
 	PsimagLite::String dcaOptions;
