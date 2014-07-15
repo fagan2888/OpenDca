@@ -64,7 +64,7 @@ public:
 	void build(MatrixType& gf,
 	           const VectorRealType& ekbar,
 	           const VectorRealType& integral,
-	           FreqEnum freqEnum)
+	           PsimagLite::FreqEnum freqEnum)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		SizeType largeKs = params_.largeKs;

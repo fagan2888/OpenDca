@@ -63,8 +63,8 @@ int main(int argc, char *argv[])
 
 	DcaLoopType dcaLoop(params,io);
 
-	dcaLoop.main(OpenDca::FREQ_MATSUBARA,params.imagIterations);
+	dcaLoop.main(PsimagLite::FREQ_MATSUBARA,params.imagIterations);
 
-	dcaLoop.main(OpenDca::FREQ_REAL,params.realIterations);
+	dcaLoop.main(PsimagLite::FREQ_REAL,params.realIterations);
 }
 
