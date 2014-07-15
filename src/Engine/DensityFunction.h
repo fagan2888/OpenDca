@@ -11,9 +11,8 @@ public:
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
 
 	DensityFunction(const MatrixType& interacting,
-	                const ParamsType& params,
-	                RealType targetDensity)
-	    : interacting_(interacting), params_(params), targetDensity_(targetDensity)
+	                const ParamsType& params)
+	    : interacting_(interacting), params_(params)
 	{}
 
 	// G(\tau=0) = T \sum_n G_interacting (iwn)
@@ -22,19 +21,29 @@ public:
 		ComplexType sum = 0;
 		for (SizeType i = 0; i < interacting_.n_row(); ++i) {
 			for (SizeType j = 0; j < interacting_.n_col(); ++j) {
-				sum += interacting_(i,j);
+				sum += interacting_(i,j) - correction(i,j);
 			}
 		}
 
-		RealType density = -std::imag(sum)/params_.beta;
-		return density - targetDensity_;
+		sum += integratedCorrection();
+		RealType density = 0.5 + std::real(sum)/params_.beta;
+		return density - params_.targetDensity;
 	}
 
 private:
 
+	RealType correction(SizeType i, SizeType j) const
+	{
+		return 0.0;
+	}
+
+	RealType integratedCorrection() const
+	{
+		return 0.0;
+	}
+
 	const MatrixType& interacting_;
 	const ParamsType& params_;
-	RealType targetDensity_;
 }; // DensityFunction
 
 #endif // OPENDCA_DENSITY_FUNC_H

@@ -52,8 +52,7 @@ public:
 	  io_(io),
 	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs*params_.orbitals),
 	  gammaRealFreq_(params_.omegas,params_.largeKs*params_.orbitals),
-	  garbage_(0),
-	  targetDensity_(0.0)
+	  garbage_(0)
 	{}
 
 	~EffectiveHamiltonian()
@@ -150,11 +149,6 @@ public:
 			std::cout<<"\n";
 		}
 
-		targetDensity_ = myInput.electrons(DcaToDmrgType::SPIN_UP) +
-		        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
-
-		targetDensity_ /= geometry_.numberOfSites();
-
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 
 		DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
@@ -195,11 +189,6 @@ public:
 	const MatrixType& andersonParameters() const
 	{
 		return p_;
-	}
-
-	RealType targetDensity() const
-	{
-		return targetDensity_;
 	}
 
 private:
@@ -397,7 +386,6 @@ private:
 	MatrixType p_;
 	MatrixType gammaRealFreq_;
 	DcaToDmrgType* garbage_;
-	RealType targetDensity_;
 };
 
 template<typename RealType, typename GeometryType,typename InputNgType>

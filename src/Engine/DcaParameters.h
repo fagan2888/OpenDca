@@ -45,6 +45,7 @@ struct DcaParameters {
 		io.readline(smallKs,"DcaFinePoints=");
 		io.readline(beta,"DcaBeta=");
 		io.readline(mu,"DcaMu=");
+		io.readline(targetDensity,"DcaTargetDensity=");
 		io.readline(delta,"DcaDelta=");
 		io.readline(dcaSolver,"DcaSolver=");
 		io.readline(imagIterations,"DcaMatsubaraIterations=");
@@ -78,6 +79,7 @@ struct DcaParameters {
 	RealType omegaStep;
 	RealType beta;
 	mutable RealType mu;
+	RealType targetDensity;
 	RealType delta;
 	PsimagLite::String dcaSolver;
 	PsimagLite::String dcaOptions;

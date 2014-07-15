@@ -142,8 +142,6 @@ private:
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
-		targetDensity_ = effectiveHamiltonian.targetDensity();
-		std::cerr<<"TargetDensity= "<<targetDensity_<<"\n";
 
 		MatrixType* gfClusterMatsubara = 0;
 
@@ -466,7 +464,7 @@ private:
 	{
 		typedef DensityFunction<MatrixType,ParametersType> DensityFunctionType;
 		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
-		DensityFunctionType densityFunction(interacting,params_,targetDensity_);
+		DensityFunctionType densityFunction(interacting,params_);
 		RootFindingType  rootFinding(densityFunction);
 		RealType mu = params_.mu;
 		rootFinding(mu);
