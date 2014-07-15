@@ -36,7 +36,8 @@ public:
 	  dispersion_(params,geometry_),
 	  sigma_(params.numberOfMatsubaras,params.largeKs*params.orbitals*params.orbitals),
 	  gckfsc_(params.numberOfMatsubaras,params.largeKs*params.orbitals*params.orbitals),
-	  fTCoefsR2K_(params.largeKs,params.largeKs)
+	  fTCoefsR2K_(params.largeKs,params.largeKs),
+	  targetDensity_(0.0)
 	{
 		SizeType Nc = params_.largeKs;
 		SizeType dim = geometry_.dimension();
@@ -87,7 +88,7 @@ public:
 			std::cout<<sigma_;
 			std::cout<<"Dca iteration= "<<i<<" error in sigma= "<<fabs(dcaError)<<"\n";
 			std::cout<<"Old mu= "<<params_.mu<<" ";
-			params_.mu = adjChemPot();
+			params_.mu = adjChemPot(gfcluster);
 			std::cout<<"New mu= "<<params_.mu<<"\n";
 		}
 	}
@@ -141,6 +142,8 @@ private:
 		std::cerr<<"lanczos started...\n";
 		effectiveHamiltonian.solve(gfCluster);
 		std::cerr<<"lanczos done\n";
+		targetDensity_ = effectiveHamiltonian.targetDensity();
+		std::cerr<<"TargetDensity= "<<targetDensity_<<"\n";
 
 		MatrixType* gfClusterMatsubara = 0;
 
@@ -459,11 +462,11 @@ private:
 		return params_.potentialV[index];
 	}
 
-	RealType adjChemPot() const
+	RealType adjChemPot(const MatrixType& interacting) const
 	{
-		typedef DensityFunction DensityFunctionType;
+		typedef DensityFunction<MatrixType,ParametersType> DensityFunctionType;
 		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
-		DensityFunctionType densityFunction;
+		DensityFunctionType densityFunction(interacting,params_,targetDensity_);
 		RootFindingType  rootFinding(densityFunction);
 		RealType mu = params_.mu;
 		rootFinding(mu);
@@ -477,6 +480,7 @@ private:
 	MatrixType sigma_;
 	MatrixType gckfsc_;
 	MatrixType fTCoefsR2K_;
+	RealType targetDensity_;
 }; // class DcaLoop
 
 } // namespace OpenDca
