@@ -66,7 +66,7 @@ public:
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
 		MatrixType gammaOmegaRealOrImag(omegaSize(freqEnum),largeKs*norb);
-		MatrixType G0(omegasRealOrImag,largeKs*norb);
+		MatrixType G0inverse(omegasRealOrImag,largeKs*norb);
 		MatrixType gfclusterK(omegasRealOrImag,params_.largeKs*params_.orbitals);
 		RealType sigmaNorm = 0;
 
@@ -77,9 +77,9 @@ public:
 			std::cout<<gfcluster;
 			// transform from real to k space
 			ft4(gfclusterK,gfcluster,fTCoefsR2K_,params_.largeKs);
-			makeSoG0(G0,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+			makeG0(G0inverse,gammaOmegaRealOrImag,barEpsilon,freqEnum);
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = makeSigma(gfclusterK,G0,freqEnum);
+			sigmaNorm = makeSigma(gfclusterK,G0inverse,freqEnum);
 			dcaError -= sigmaNorm;
 			std::cout<<"sigma\n";
 			std::cout<<sigma_;
@@ -317,14 +317,15 @@ private:
 		return factor*ind2;
 	}
 
-	void makeSoG0(MatrixType& G0,
-	              const MatrixType& gammakomega,
-	              const VectorRealType& epsbar,
-	              FreqEnum freqEnum)
+	void makeG0(MatrixType& G0inverse,
+	            const MatrixType& gammakomega,
+	            const VectorRealType& epsbar,
+	            FreqEnum freqEnum)
 	{
 		assert(freqEnum == FREQ_MATSUBARA);
 		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
 
+		std::cout<<"#G0";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
 			ComplexType omega = omegaValue(i,(lanczosReal) ? FREQ_REAL : FREQ_MATSUBARA);
 			for (SizeType j = 0;j < epsbar.size(); ++j) {
@@ -335,12 +336,12 @@ private:
 				SizeType orb2 = tmp % params_.orbitals;
 				if (orb1 != orb2) continue;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
-				G0(i,jj) = 1.0/(omega -epsbar[j] - gammakomega(i,jj));
+				G0inverse(i,jj) = omega -epsbar[j] - gammakomega(i,jj);
+				std::cout<<1.0/G0inverse(i,jj)<<" ";
 			}
-		}
 
-		std::cout<<"#G0";
-		std::cout<<G0;
+			std::cout<<"\n";
+		}
 	}
 
 	RealType makeSigma(const MatrixType& interacting,
@@ -356,7 +357,7 @@ private:
 				SizeType orb2 = tmp % params_.orbitals;
 				if (orb1 != orb2) continue;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
-				sigma_(i,j) = 1.0/nonInteracting(i,jj) - 1.0/interacting(i,jj);
+				sigma_(i,j) = nonInteracting(i,jj) - 1.0/interacting(i,jj);
 			}
 		}
 
