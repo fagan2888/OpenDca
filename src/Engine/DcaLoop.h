@@ -66,7 +66,8 @@ public:
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
-		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
+		bool lanczosReal = isOption("lanczosreal");
+		bool adjustMuLattice = isOption("adjustmulattice");
 		SizeType omegasRealOrImag = (lanczosReal) ? params_.omegas :
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
@@ -77,18 +78,22 @@ public:
 		densityFunction_.setFreqType(freqEnum);
 
 		for (SizeType i = 0; i < iterations; ++i) {
-			std::cout<<"Old mu= "<<params_.mu<<" ";
-			params_.mu = adjChemPot();
-			std::cout<<"New mu= "<<params_.mu<<"\n";
+
+			if (adjustMuLattice) adjChemPot();
+
 			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
 			std::cout<<"#gfcluster\n";
 			std::cout<<gfcluster;
+
 			// transform from real to k space
 			ft4(gfclusterK,gfcluster,fTCoefsR2K_,params_.largeKs);
+
 			makeG0(G0inverse,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+
 			RealType dcaError = sigmaNorm;
 			sigmaNorm = densityFunction_.makeSigma(gfclusterK,G0inverse,freqEnum);
 			dcaError -= sigmaNorm;
+
 			std::cout<<"sigma\n";
 			std::cout<<densityFunction_.sigma();
 			std::cout<<"Dca iteration= "<<i<<" error in sigma= "<<fabs(dcaError)<<"\n";
@@ -97,13 +102,18 @@ public:
 
 private:
 
+	bool isOption(PsimagLite::String what) const
+	{
+		return (params_.dcaOptions.find(what) != PsimagLite::String::npos);
+	}
+
 	void diagUpdate(MatrixType& gfCluster,
 	                MatrixType& gammaOmegaRealOrImag,
 	                const VectorRealType& ekbar,
 	                PsimagLite::FreqEnum freqEnum)
 	{
 		const MatrixType& gckfsc = densityFunction_.gf();
-		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
+		bool lanczosReal = isOption("lanczosreal");
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc.n_row(),gckfsc.n_col());
 		EffectiveHamiltonianType effectiveHamiltonian(params_,geometry_,io_);
@@ -258,7 +268,7 @@ private:
 	            PsimagLite::FreqEnum freqEnum)
 	{
 		assert(freqEnum == PsimagLite::FREQ_MATSUBARA);
-		bool lanczosReal = (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos);
+		bool lanczosReal = isOption("lanczosreal");
 
 		std::cout<<"#G0";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
@@ -359,12 +369,20 @@ private:
 		return params_.potentialV[index];
 	}
 
-	RealType adjChemPot() const
+	void adjChemPot() const
+	{
+		RealType mu = adjChemPot_();
+		std::cout<<"Old mu= "<<params_.mu<<" ";
+		params_.mu = mu;
+		std::cout<<"New mu= "<<params_.mu<<"\n";
+	}
+
+	RealType adjChemPot_() const
 	{
 		PairRealRealType aAndB = findAandB();
 		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
 			try {
-				RealType mu = adjChemPot(aAndB, tolerance);
+				RealType mu = adjChemPot_(aAndB, tolerance);
 				return mu;
 			} catch (std::exception& e) {}
 		}
@@ -372,7 +390,7 @@ private:
 		throw PsimagLite::RuntimeError("adjChemPot failed\n");
 	}
 
-	RealType adjChemPot(const PairRealRealType& aAndB, RealType tol) const
+	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
 	{
 		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
 		RootFindingType  rootFinding(densityFunction_,aAndB.first, aAndB.second,1000,tol);
