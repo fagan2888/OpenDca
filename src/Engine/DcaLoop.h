@@ -28,6 +28,7 @@ class DcaLoop {
 	typedef DensityFunction<MatrixType,
 	                        VectorType,
 	                        DispersionType> DensityFunctionType;
+	typedef std::pair<RealType,RealType> PairRealRealType;
 
 public:
 
@@ -360,11 +361,34 @@ private:
 
 	RealType adjChemPot() const
 	{
+		PairRealRealType aAndB = findAandB();
+		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
+			try {
+				RealType mu = adjChemPot(aAndB, tolerance);
+				return mu;
+			} catch (std::exception& e) {}
+		}
+
+		throw PsimagLite::RuntimeError("adjChemPot failed\n");
+	}
+
+	RealType adjChemPot(const PairRealRealType& aAndB, RealType tol) const
+	{
 		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
-		RootFindingType  rootFinding(densityFunction_);
+		RootFindingType  rootFinding(densityFunction_,aAndB.first, aAndB.second,1000,tol);
 		RealType mu = params_.mu;
 		rootFinding(mu);
 		return mu;
+	}
+
+	PairRealRealType findAandB() const
+	{
+		for (RealType value = 1.0; value < 100.0; value++) {
+			RealType value2 = densityFunction_(value) * densityFunction_(-value);
+			if (value2 < 0) return PairRealRealType(-value,value);
+		}
+
+		throw PsimagLite::RuntimeError("RootFinding init failed\n");
 	}
 
 	const ParametersType& params_;

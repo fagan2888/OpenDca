@@ -11,6 +11,8 @@ class DensityFunction {
 	typedef typename DispersionType::ParametersType ParamsType;
 	typedef typename DispersionType::GeometryType GeometryType;
 
+	enum PrintEnum {PRINT_YES, PRINT_NO};
+
 public:
 
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
@@ -26,24 +28,24 @@ public:
 	      sigma_(gf_.n_row(),gf_.n_col()),
 	      dispersion_(dispersion)
 	{
-		makeGf(freqEnum_);
+		makeGf(freqEnum_,PRINT_YES);
 	}
 
 	// G(\tau=0) = T \sum_n G_interacting (iwn)
 	RealType operator()(RealType mu) const
 	{
 		params_.mu = mu;
-		makeGf(freqEnum_);
+		makeGf(freqEnum_, PRINT_NO);
 
 		ComplexType sum = 0;
 		for (SizeType i = 0; i < gf_.n_row(); ++i) {
-			for (SizeType j = 0; j < gf_.n_col(); ++j) {
+			for (SizeType j = 0; j < gf_.n_col(); ++j) { // FIXME
 				sum += gf_(i,j) - correction(i,j);
 			}
 		}
 
 		sum += integratedCorrection();
-		RealType density = 0.5 + std::real(sum)/params_.beta;
+		RealType density = 0.5*params_.orbitals + std::real(sum)/params_.beta;
 		return density - params_.targetDensity;
 	}
 
@@ -107,7 +109,7 @@ public:
 
 private:
 
-	void makeGf(PsimagLite::FreqEnum freqEnum) const
+	void makeGf(PsimagLite::FreqEnum freqEnum, PrintEnum printEnum) const
 	{
 		VectorType gckf(omegaSize(freqEnum));
 		SizeType Nc = params_.largeKs;
@@ -126,8 +128,10 @@ private:
 			}
 		}
 
-		std::cout<<"#GCKFSC\n";
-		std::cout<<gf_;
+		if (printEnum == PRINT_YES) {
+			std::cout<<"#GCKFSC\n";
+			std::cout<<gf_;
+		}
 	}
 
 	void makeGf(VectorType& gckf,
