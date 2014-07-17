@@ -26,10 +26,10 @@ std::ostream& operator<<(std::ostream& os,const HubbardParams<RealType>& hp)
 	return os;
 }
 
-template<typename ParametersType,typename GeometryType,typename InputNgType_>
+template<typename ParametersType_,typename GeometryType,typename InputNgType_>
 class DcaToDmrg {
 
-	typedef typename ParametersType::RealType RealType_;
+	typedef typename ParametersType_::RealType RealType_;
 	typedef typename PsimagLite::Vector<RealType_>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<SizeType>::Type VectorSizeType;
 	typedef std::complex<RealType_> ComplexType;
@@ -40,6 +40,7 @@ class DcaToDmrg {
 
 public:
 
+	typedef ParametersType_ ParametersType;
 	typedef InputNgType_ InputNgType;
 	typedef RealType_ RealType;
 
@@ -188,7 +189,7 @@ public:
 			x = params_.nofPointsInBathPerClusterPoint;
 		} else {
 			std::cerr<<"WARNING: readline unrecognized "<<label<<"\n";
-			io_.readline(x,label);	
+			io_.readline(x,label);
 		}
 	}
 
@@ -225,7 +226,7 @@ public:
 	{
 		if (label == "GeometryKind=") {
 			x = geometry_.label(lastTermSeen_);
-		} else { 
+		} else {
 			io_.readline(x,label);
 		}
 	}

@@ -7,10 +7,7 @@
 #include "DcaToDmrg.h"
 #include "InputNg.h"
 #include "AndersonFit.h"
-#include "DcaSolverLanczos.h"
-#include "DcaSolverDmrg.h"
 #include "FreqEnum.h"
-#include "Geometry/Geometry.h"
 #include "RootFindingBisection.h"
 #include "ClusterFunctions.h"
 
@@ -28,20 +25,13 @@ class EffectiveHamiltonian {
 	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
 	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
 	typedef DcaToDmrg<ParametersType,GeometryType,InputNgType> DcaToDmrgType_;
-	typedef PsimagLite::Geometry<RealType,
-	                             DcaToDmrgType_,
-	                             Dmrg::ProgramGlobals> VaryingGeometryType;
-	typedef PsimagLite::Matrix<ComplexType> MatrixType;
+	typedef ClusterFunctions<DcaToDmrgType_> ClusterFunctionsType;
+	typedef typename ClusterFunctionsType::MatrixType MatrixType;
 	typedef PsimagLite::Matrix<RealType> MatrixRealType;
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
 	typedef AndersonFit<VectorType,ParametersType> AndersonFitType;
-	typedef DcaSolverLanczos<DcaToDmrgType_, VaryingGeometryType> DcaSolverLanczosType;
-	typedef DcaSolverDmrg<DcaToDmrgType_, VaryingGeometryType>  DcaSolverDmrgType;
-	typedef typename DcaSolverDmrgType::DcaSolverBaseType DcaSolverBaseType;
-	typedef typename DcaSolverBaseType::VectorSizeType VectorSizeType;
-	typedef typename DcaSolverBaseType::PlotParamsType PlotParamsType;
-	typedef ClusterFunctions ClusterFunctionsType;
+
 	typedef std::pair<RealType,RealType> PairRealRealType;
 
 public:
@@ -56,7 +46,8 @@ public:
 	  io_(io),
 	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs*params_.orbitals),
 	  gammaRealFreq_(params_.omegas,params_.largeKs*params_.orbitals),
-	  garbage_(0)
+	  garbage_(0),
+	  clusterFunctions_(garbage_,params_,io)
 	{}
 
 	~EffectiveHamiltonian()
@@ -127,9 +118,9 @@ public:
 
 		if (adjustMuCluster) adjChemPot();
 
-		sweepParticleSectors();
+		clusterFunctions_.sweepParticleSectors();
 
-		findGf(gfCluster);
+		clusterFunctions_.findGf(gfCluster);
 	}
 
 	const MatrixType& andersonParameters() const
@@ -177,106 +168,6 @@ private:
 		}
 
 		throw PsimagLite::RuntimeError("RootFinding init failed\n");
-	}
-
-
-	void findGf(MatrixType& gfCluster)
-	{
-		DcaToDmrgType& myInput = *garbage_;
-
-		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
-
-		DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
-
-		RealType omegaEnd = params_.omegas * params_.omegaStep + params_.omegaBegin;
-
-		SizeType matsubaras = params_.numberOfMatsubaras;
-		if (params_.dcaOptions.find("lanczosreal") != PsimagLite::String::npos)
-			matsubaras = 0;
-
-		PlotParamsType plotParams(params_.omegaBegin,
-		                          omegaEnd,
-		                          params_.omegaStep,
-		                          params_.delta,
-		                          params_.beta,
-		                          matsubaras);
-
-		SizeType Nc = params_.largeKs;
-		VectorSizeType sites(2);
-		for (SizeType i = 0; i < Nc; ++i) {
-			for (SizeType j = i; j < Nc; ++j) {
-				sites[0] = i;
-				sites[1] = j; // dca indexing
-				solver->solve(gfCluster,sites,plotParams);
-			}
-		}
-
-		for (SizeType orb = 0; orb< params_.orbitals; ++orb)
-			for (SizeType i = 0; i < Nc; ++i)
-				for (SizeType j = 0; j < i; ++j)
-					for (SizeType x = 0; x < gfCluster.n_row(); ++x)
-						gfCluster(x,i+j*Nc+orb*Nc*Nc) =
-						          gfCluster(x,j+i*Nc+orb*Nc*Nc);
-
-		deAllocateSolverPtr(&solver);
-	}
-
-	void sweepParticleSectors()
-	{
-		DcaToDmrgType& myInput = *garbage_;
-
-		RealType Eg = 1e6;
-		SizeType iMin = 0;
-		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
-			myInput.muFeatureSet(i);
-			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
-			        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
-			if (total == 0) continue;
-			std::cout<<"Trying with "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
-			std::cout<<" electrons up and ";
-			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
-			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
-			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
-			RealType tmp = solver->findLowestEnergy();
-			deAllocateSolverPtr(&solver);
-			if (i > 0 && tmp > Eg) continue;
-			iMin = i;
-			Eg = tmp;
-		}
-
-		if (myInput.muFeatureSize() > 0) {
-			myInput.muFeatureSet(iMin);
-			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
-			std::cout<<" in mu sector "<<iMin;
-			std::cout<<" electrons up "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
-			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
-			std::cout<<"\n";
-		}
-	}
-
-	DcaSolverBaseType* allocateSolverPtr(DcaToDmrgType&myInput,
-	                                     const VaryingGeometryType& geometry2)
-	{
-		PsimagLite::String dcaSolver = params_.dcaSolver;
-		DcaSolverBaseType* solver = 0;
-		if (dcaSolver == "Dmrg") {
-			solver = new DcaSolverDmrgType(myInput,geometry2,io_);
-		} else if (dcaSolver == "Lanczos") {
-			solver = new DcaSolverLanczosType(myInput,geometry2,io_);
-		} else {
-			PsimagLite::String str("makeHubbardParams(): Unknown solver ");
-			str += dcaSolver;
-			throw PsimagLite::RuntimeError(str);
-		}
-
-		return solver;
-	}
-
-	void deAllocateSolverPtr(DcaSolverBaseType** solver) const
-	{
-		DcaSolverBaseType* solver2 = *solver;
-		delete solver2;
-		solver2 = 0;
 	}
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)
