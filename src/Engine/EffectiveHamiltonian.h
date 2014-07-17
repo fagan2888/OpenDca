@@ -119,35 +119,9 @@ public:
 			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
 		}
 
+		sweepParticleSectors();
+
 		DcaToDmrgType& myInput = *garbage_;
-
-		RealType Eg = 1e6;
-		SizeType iMin = 0;
-		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
-			myInput.muFeatureSet(i);
-			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
-			        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
-			if (total == 0) continue;
-			std::cout<<"Trying with "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
-			std::cout<<" electrons up and ";
-			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
-			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
-			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
-			RealType tmp = solver->findLowestEnergy();
-			deAllocateSolverPtr(&solver);
-			if (i > 0 && tmp > Eg) continue;
-			iMin = i;
-			Eg = tmp;
-		}
-
-		if (myInput.muFeatureSize() > 0) {
-			myInput.muFeatureSet(iMin);
-			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
-			std::cout<<" in mu sector "<<iMin;
-			std::cout<<" electrons up "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
-			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
-			std::cout<<"\n";
-		}
 
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 
@@ -192,6 +166,39 @@ public:
 	}
 
 private:
+
+	void sweepParticleSectors()
+	{
+		DcaToDmrgType& myInput = *garbage_;
+
+		RealType Eg = 1e6;
+		SizeType iMin = 0;
+		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
+			myInput.muFeatureSet(i);
+			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
+			        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			if (total == 0) continue;
+			std::cout<<"Trying with "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
+			std::cout<<" electrons up and ";
+			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
+			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
+			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
+			RealType tmp = solver->findLowestEnergy();
+			deAllocateSolverPtr(&solver);
+			if (i > 0 && tmp > Eg) continue;
+			iMin = i;
+			Eg = tmp;
+		}
+
+		if (myInput.muFeatureSize() > 0) {
+			myInput.muFeatureSet(iMin);
+			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
+			std::cout<<" in mu sector "<<iMin;
+			std::cout<<" electrons up "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
+			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			std::cout<<"\n";
+		}
+	}
 
 	DcaSolverBaseType* allocateSolverPtr(DcaToDmrgType&myInput,
 	                                     const VaryingGeometryType& geometry2)
