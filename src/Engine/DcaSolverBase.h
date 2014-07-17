@@ -32,6 +32,8 @@ public:
 
 	virtual RealType findLowestEnergy() const = 0;
 
+	virtual RealType density(SizeType total1, SizeType total2) const = 0;
+
 };
 }
 

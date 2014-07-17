@@ -42,6 +42,10 @@ public:
 	// <gs|n|gs>
 	RealType operator()(RealType mu) const
 	{
+		params_.mu = mu;
+
+		updatePotentialV();
+
 		RealType n = sweepParticleSectors();
 
 		return n - params_.targetDensity;
@@ -104,6 +108,7 @@ public:
 
 		RealType Eg = 1e6;
 		SizeType iMin = 0;
+		RealType densityGs = 0;
 		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
 			myInput.muFeatureSet(i);
 			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
@@ -114,11 +119,13 @@ public:
 			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
 			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
+			RealType density = solver->density(geometry2.numberOfSites(),params_.largeKs);
 			RealType tmp = solver->findLowestEnergy();
 			deAllocateSolverPtr(&solver);
 			if (i > 0 && tmp > Eg) continue;
 			iMin = i;
 			Eg = tmp;
+			densityGs = density;
 		}
 
 		if (myInput.muFeatureSize() > 0) {
@@ -130,7 +137,14 @@ public:
 			std::cout<<"\n";
 		}
 
-		return 0.0;
+		return densityGs;
+	}
+
+	void updatePotentialV() const
+	{
+		assert(myInputPtr_);
+
+		myInputPtr_->updatePotentialV();
 	}
 
 private:

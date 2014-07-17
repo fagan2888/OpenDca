@@ -21,6 +21,7 @@ public:
 		RealType mu = adjChemPot_();
 		std::cout<<"Old mu= "<<params_.mu<<" ";
 		params_.mu = mu;
+		functions_.updatePotentialV();
 		std::cout<<"New mu= "<<params_.mu<<"\n";
 	}
 

@@ -77,6 +77,8 @@ public:
 		freqEnum_ = freqEnum;
 	}
 
+	void updatePotentialV() {}
+
 	SizeType omegaSize(PsimagLite::FreqEnum freqEnum) const
 	{
 		if (freqEnum == PsimagLite::FREQ_REAL)

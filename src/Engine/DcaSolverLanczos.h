@@ -45,7 +45,8 @@ public:
 	 : myInput_(myInput),
 	   modelSelector_(myInput,geometry2),
 	   model_(modelSelector_()),
-	   engine_(model_,geometry2.numberOfSites(),myInput)
+	   engine_(model_,geometry2.numberOfSites(),myInput),
+	   cicjMatrix_(geometry2.numberOfSites(),geometry2.numberOfSites())
 	{
 		std::cout<<"DcaSolverLanczos: geometry\n";
 		std::cout<<geometry2;
@@ -95,6 +96,24 @@ public:
 		return engine_.gsEnergy();
 	}
 
+	RealType density(SizeType total1, SizeType total2) const
+	{
+		PsimagLite::Vector<PairType>::Type spins(1,PairType(0,0));
+		SizeType cicj = LanczosPlusPlus::ProgramGlobals::operator2id("c");
+		SizeType norbitals = maxOrbitals(model_);
+
+		RealType sum = 0;
+		for (SizeType orb1=0;orb1<norbitals;orb1++) {
+			cicjMatrix_.setTo(0.0);
+			engine_.twoPoint(cicjMatrix_,cicj,spins,PairType(orb1,orb1));
+			for (SizeType i = 0; i < total2; ++i)
+				sum += cicjMatrix_(i,i);
+		}
+
+		std::cout<<"WARNING: Density assumes spin sectors are equal\n";
+		return 2.0 * sum;
+	}
+
 private:
 
 	void plotAll(MatrixType& gf,
@@ -132,7 +151,7 @@ private:
 	}
 
 	template<typename SomeLanczosModelType>
-	SizeType maxOrbitals(const SomeLanczosModelType& model)
+	SizeType maxOrbitals(const SomeLanczosModelType& model) const
 	{
 		SizeType res=0;
 		for (SizeType i=0;i<model.geometry().numberOfSites();i++) {
@@ -148,6 +167,7 @@ private:
 	                               DcaToDmrgType> modelSelector_;
 	const ModelType& model_;
 	EngineType engine_;
+	mutable PsimagLite::Matrix<RealType> cicjMatrix_;
 };
 }
 

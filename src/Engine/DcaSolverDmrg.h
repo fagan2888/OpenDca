@@ -80,6 +80,13 @@ public:
 		return energy_;
 	}
 
+	RealType density(SizeType total1, SizeType total2) const
+	{
+		PsimagLite::String msg("DcaSolverDmrg::");
+		msg += "density: unimplemented\n";
+		throw PsimagLite::RuntimeError(msg);
+	}
+
 private:
 
 	void solveForSite(MatrixType& gf,

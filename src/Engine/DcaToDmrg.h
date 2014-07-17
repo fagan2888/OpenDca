@@ -96,11 +96,12 @@ public:
 		SizeType alpha = 0;
 		SizeType alpha2 = 0;
 
-		VectorRealType originalV(2*total);
-		io_.read(originalV,"potentialV");
+		originalV_.resize(2*total);
+		io_.read(originalV_,"potentialV");
 
 		SizeType clusterSize = params_.largeKs * params_.orbitals;
 		SizeType nBathOrbitals = nBath * params_.orbitals;
+		RealType mu = params_.mu;
 
 		for (SizeType i=0;i<total;++i) {
 			SizeType ind = dcaIndexToDmrgIndex(i);
@@ -112,7 +113,7 @@ public:
 					hubbardParams_.hoppings(ind,jnd)=std::real(tCluster(i,j));
 					if (ind == jnd)
 						hubbardParams_.potentialV[ind] =
-						  hubbardParams_.potentialV[ind + total] = originalV[ind];
+						  hubbardParams_.potentialV[ind + total] = originalV_[ind] - mu;
 				} else if (i<clusterSize && j>=clusterSize) { // we're inter cluster
 					getBathPoint(r,alpha,j,clusterSize,nBathOrbitals);
 					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,i);
@@ -150,6 +151,25 @@ public:
 		}
 
 		std::cout<<hubbardParams_;
+	}
+
+	void updatePotentialV()
+	{
+		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
+		SizeType total=params_.largeKs*(1+nBath)*params_.orbitals;
+		SizeType clusterSize = params_.largeKs * params_.orbitals;
+
+		for (SizeType i=0;i<total;++i) {
+			SizeType ind = dcaIndexToDmrgIndex(i);
+			for (SizeType j=0;j<total;++j) {
+				SizeType jnd = dcaIndexToDmrgIndex(j);
+				if (i>=clusterSize || j>=clusterSize)
+					continue; //we're NOT in the cluster
+				if (ind != jnd) continue; // we're NOT on-site
+				hubbardParams_.potentialV[ind] =
+				  hubbardParams_.potentialV[ind + total] = originalV_[ind] - params_.mu;
+			}
+		}
 	}
 
 	void read(VectorSizeType& x,PsimagLite::String label)
@@ -485,6 +505,7 @@ private:
 	SizeType connectorsCounter_;
 	SizeType electronsUp_;
 	SizeType electronsDown_;
+	VectorRealType originalV_;
 	VectorSizeType muFeatureOffset_;
 }; // class DcaToDmrg
 
