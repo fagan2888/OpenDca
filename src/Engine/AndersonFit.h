@@ -33,16 +33,19 @@ public:
 		fillVector(data,n1);
 		RealType tmp=0.0;
 		SizeType totaln=matsubaras_.size();
+		SizeType effectiveNs = 0;
 
 		for (SizeType n=0;n<totaln;++n) {
+			if (!omegaCondition(n)) continue;
+			effectiveNs++;
 			ComplexType ctmp = gf_[n];
-			ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
+			ComplexType ctmp2=andersonG0(p_,matsubaras_[n]);
 			ComplexType z = ctmp - ctmp2;
 			RealType tmp2 = std::real(z)*std::real(z) + std::imag(z)*std::imag(z);
 			tmp += tmp2;
 		}
 
-		tmp /= static_cast<RealType>(totaln+1.0);
+		tmp /= static_cast<RealType>(effectiveNs+1.0);
 
 		return tmp;
 	}
@@ -60,23 +63,25 @@ public:
 		fillVector(data,n1);
 		assert(n0 == n1);
 		SizeType totaln=matsubaras_.size();
+		SizeType effectiveNs = 0;
 
 		for (SizeType i = 0; i < n1; ++i) {
 			RealType tmp=0.0;
 			for (SizeType n=0;n<totaln;++n) {
+				if (!omegaCondition(n)) continue;
+				if (i == 0) effectiveNs++;
 				ComplexType ctmp = gf_[n];
-				ComplexType ctmp2=andersonG0(p_,matsubaras_[n],params_.mu);
+				ComplexType ctmp2=andersonG0(p_,matsubaras_[n]);
 				ComplexType tmp2 = ctmp - ctmp2;
 				ComplexType g0Gradient = andersonG0gradient(p_,
 				                                            matsubaras_[n],
-				                                            params_.mu,
 				                                            i);
 				tmp += (std::real(tmp2) * std::real(g0Gradient) +
 				        std::imag(tmp2) * std::imag(g0Gradient));
 			}
 
 			tmp *= -2.0;
-			tmp /= static_cast<RealType>(totaln+1.0);
+			tmp /= static_cast<RealType>(effectiveNs+1.0);
 			result[i] = tmp;
 		}
 	}
@@ -94,7 +99,7 @@ private:
 	}
 
 	// This is the function that defines the fitting
-	ComplexType andersonG0(const VectorRealType& p,RealType wn,RealType mu) const
+	ComplexType andersonG0(const VectorRealType& p,RealType wn) const
 	{
 		SizeType n = static_cast<SizeType>(p.size()/2);
 		ComplexType ctmp=0;
@@ -108,7 +113,6 @@ private:
 	// This is the function that defines the fitting
 	ComplexType andersonG0gradient(const VectorRealType& p,
 	                               RealType wn,
-	                               RealType mu,
 	                               SizeType ind) const
 	{
 		SizeType n = static_cast<SizeType>(p.size()/2);
@@ -119,6 +123,11 @@ private:
 		assert(ind2 < p.size());
 		ComplexType ctmp = ComplexType(-p[ind],wn);
 		return p[ind2]*p[ind2]/(ctmp*ctmp);
+	}
+
+	bool omegaCondition(SizeType n) const
+	{
+		return (fabs(matsubaras_[n]) < params_.andersonFitCutoff);
 	}
 
 	const ParametersType& params_;

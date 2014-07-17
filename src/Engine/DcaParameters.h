@@ -28,6 +28,8 @@ struct DcaParameters {
 	  - DcaRealFreqIterations=integer Number of self-consistent iterations done
 	    with real freq.
 	  - DcaOptions=string Either none or nomufeature
+	  - DcaAndersonFitCutoff=real Maximum Matsubara freq. in absolute value to be
+	                              considered for the Anderson fitting.
 	  - Threads=integer [Optional]
 	*/
 	template<typename SomeInputType>
@@ -51,6 +53,7 @@ struct DcaParameters {
 		io.readline(imagIterations,"DcaMatsubaraIterations=");
 		io.readline(realIterations,"DcaRealFreqIterations=");
 		io.readline(dcaOptions,"DcaOptions=");
+		io.readline(andersonFitCutoff,"DcaAndersonFitCutoff=");
 
 		nthreads = 1;
 		try {
@@ -75,6 +78,7 @@ struct DcaParameters {
 	SizeType nofPointsInBathPerClusterPoint;
 	SizeType orbitals;
 	SizeType nthreads;
+	SizeType andersonFitCutoff;
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;
