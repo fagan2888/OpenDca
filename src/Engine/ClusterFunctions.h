@@ -11,7 +11,6 @@ namespace OpenDca {
 template<typename DcaToDmrgType>
 class ClusterFunctions {
 
-	typedef typename DcaToDmrgType::ParametersType ParamtersType;
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
 	typedef typename DcaToDmrgType::RealType RealType_;
 	typedef PsimagLite::Geometry<RealType_,
@@ -26,22 +25,37 @@ class ClusterFunctions {
 
 public:
 
+	typedef typename DcaToDmrgType::ParametersType ParametersType;
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef RealType_ RealType;
 
-	ClusterFunctions(const ParamtersType& params,
+	ClusterFunctions(const ParametersType& params,
 	                 typename InputNgType::Readable& io)
-	    : params_(params), io_(io)
+	    : params_(params), io_(io), myInputPtr_(0)
 	{}
 
-	RealType operator()(RealType mu) const
+	void build(DcaToDmrgType* myInputPtr)
 	{
-
-		return 0.0;
+		myInputPtr_ = myInputPtr;
 	}
 
-	void findGf(MatrixType& gfCluster, DcaToDmrgType& myInput)
+	// <gs|n|gs>
+	RealType operator()(RealType mu) const
 	{
+		RealType n = sweepParticleSectors();
+
+		return n - params_.targetDensity;
+	}
+
+	void findGf(MatrixType& gfCluster)
+	{
+		if (!myInputPtr_) {
+			PsimagLite::String str("findGf: must call build first\n");
+			throw PsimagLite::RuntimeError("ClusterFunctions::" + str);
+		}
+
+		DcaToDmrgType& myInput = *myInputPtr_;
+
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 
 		DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
@@ -79,8 +93,15 @@ public:
 		deAllocateSolverPtr(&solver);
 	}
 
-	void sweepParticleSectors(DcaToDmrgType& myInput)
+	RealType sweepParticleSectors() const
 	{
+		if (!myInputPtr_) {
+			PsimagLite::String str("sweepParticleSectors: must call build first\n");
+			throw PsimagLite::RuntimeError("ClusterFunctions::" + str);
+		}
+
+		DcaToDmrgType& myInput = *myInputPtr_;
+
 		RealType Eg = 1e6;
 		SizeType iMin = 0;
 		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
@@ -108,12 +129,14 @@ public:
 			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
 			std::cout<<"\n";
 		}
+
+		return 0.0;
 	}
 
 private:
 
 	DcaSolverBaseType* allocateSolverPtr(DcaToDmrgType&myInput,
-	                                     const VaryingGeometryType& geometry2)
+	                                     const VaryingGeometryType& geometry2) const
 	{
 		PsimagLite::String dcaSolver = params_.dcaSolver;
 		DcaSolverBaseType* solver = 0;
@@ -137,8 +160,9 @@ private:
 		solver2 = 0;
 	}
 
-	const ParamtersType& params_;
+	const ParametersType& params_;
 	typename InputNgType::Readable& io_;
+	DcaToDmrgType* myInputPtr_;
 }; // ClusterFunctions
 
 } // namespace OpenDca

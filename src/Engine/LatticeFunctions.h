@@ -8,16 +8,16 @@ template<typename MatrixType,
 class LatticeFunctions {
 
 	typedef typename MatrixType::value_type ComplexType;
-	typedef typename DispersionType::ParametersType ParamsType;
 	typedef typename DispersionType::GeometryType GeometryType;
 
 	enum PrintEnum {PRINT_YES, PRINT_NO};
 
 public:
 
+	typedef typename DispersionType::ParametersType ParametersType;
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
 
-	LatticeFunctions(const ParamsType& params,
+	LatticeFunctions(const ParametersType& params,
 	                const GeometryType& geometry,
 	                const DispersionType& dispersion)
 	    : freqEnum_(PsimagLite::FREQ_MATSUBARA),
@@ -180,7 +180,7 @@ private:
 	}
 
 	PsimagLite::FreqEnum freqEnum_;
-	const ParamsType& params_;
+	const ParametersType& params_;
 	const GeometryType& geometry_;
 	mutable MatrixType gf_;
 	MatrixType sigma_;

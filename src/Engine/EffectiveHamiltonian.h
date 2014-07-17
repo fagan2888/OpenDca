@@ -10,6 +10,7 @@
 #include "FreqEnum.h"
 #include "RootFindingBisection.h"
 #include "ClusterFunctions.h"
+#include "Adjustments.h"
 
 namespace OpenDca {
 
@@ -31,8 +32,7 @@ class EffectiveHamiltonian {
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
 	typedef AndersonFit<VectorType,ParametersType> AndersonFitType;
-
-	typedef std::pair<RealType,RealType> PairRealRealType;
+	typedef Adjustments<ClusterFunctionsType> AdjustmentsType;
 
 public:
 
@@ -47,7 +47,8 @@ public:
 	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs*params_.orbitals),
 	  gammaRealFreq_(params_.omegas,params_.largeKs*params_.orbitals),
 	  garbage_(0),
-	  clusterFunctions_(params_,io)
+	  clusterFunctions_(params_,io),
+	  adjustments_(clusterFunctions_,params_)
 	{}
 
 	~EffectiveHamiltonian()
@@ -105,6 +106,8 @@ public:
 
 		// Calculate "hoppings"
 		garbage_ = makeHubbardParams(ekbar,io_);
+
+		clusterFunctions_.build(garbage_);
 	}
 
 	void solve(MatrixType& gfCluster)
@@ -114,13 +117,14 @@ public:
 			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
 		}
 
-		//bool adjustMuCluster = (!isOption("noadjustmu") & !isOption("adjustmulattice"));
+		bool adjustMuCluster = (!adjustments_.isOption("noadjustmu") &
+		                        !adjustments_.isOption("adjustmulattice"));
 
-		//if (adjustMuCluster) adjChemPot();
+		if (adjustMuCluster) adjustments_.adjChemPot();
 
-		clusterFunctions_.sweepParticleSectors(*garbage_);
+		clusterFunctions_.sweepParticleSectors();
 
-		clusterFunctions_.findGf(gfCluster,*garbage_);
+		clusterFunctions_.findGf(gfCluster);
 	}
 
 	const MatrixType& andersonParameters() const
@@ -129,46 +133,6 @@ public:
 	}
 
 private:
-
-	void adjChemPot() const
-	{
-		RealType mu = adjChemPot_();
-		std::cout<<"Old mu= "<<params_.mu<<" ";
-		params_.mu = mu;
-		std::cout<<"New mu= "<<params_.mu<<"\n";
-	}
-
-	RealType adjChemPot_() const
-	{
-		PairRealRealType aAndB = findAandB();
-		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
-			try {
-				RealType mu = adjChemPot_(aAndB, tolerance);
-				return mu;
-			} catch (std::exception& e) {}
-		}
-
-		throw PsimagLite::RuntimeError("adjChemPot failed\n");
-	}
-
-	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
-	{
-		typedef PsimagLite::RootFindingBisection<ClusterFunctionsType> RootFindingType;
-		RootFindingType  rootFinding(clusterFunctions_,aAndB.first, aAndB.second,1000,tol);
-		RealType mu = params_.mu;
-		rootFinding(mu);
-		return mu;
-	}
-
-	PairRealRealType findAandB() const
-	{
-		for (RealType value = 1.0; value < 100.0; value++) {
-			RealType value2 = clusterFunctions_(value) * clusterFunctions_(-value);
-			if (value2 < 0) return PairRealRealType(-value,value);
-		}
-
-		throw PsimagLite::RuntimeError("RootFinding init failed\n");
-	}
 
 	void saveAndersonParameters(const VectorRealType&src,SizeType k)
 	{
@@ -332,11 +296,6 @@ private:
 				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix
 	}
 
-	bool isOption(PsimagLite::String what) const
-	{
-		return (params_.dcaOptions.find(what) != PsimagLite::String::npos);
-	}
-
 	const ParametersType& params_;
 	const GeometryType& geometry_;
 	typename InputNgType::Readable& io_;
@@ -344,6 +303,7 @@ private:
 	MatrixType gammaRealFreq_;
 	DcaToDmrgType* garbage_;
 	ClusterFunctionsType clusterFunctions_;
+	AdjustmentsType adjustments_;
 };
 
 template<typename RealType, typename GeometryType,typename InputNgType>

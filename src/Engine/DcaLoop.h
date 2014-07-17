@@ -7,6 +7,7 @@
 #include "../../../PsimagLite/src/FreqEnum.h"
 #include "LatticeFunctions.h"
 #include "RootFindingBisection.h"
+#include "Adjustments.h"
 
 namespace OpenDca {
 
@@ -28,7 +29,7 @@ class DcaLoop {
 	typedef LatticeFunctions<MatrixType,
 	                        VectorType,
 	                        DispersionType> LatticeFunctionsType;
-	typedef std::pair<RealType,RealType> PairRealRealType;
+	typedef Adjustments<LatticeFunctionsType> AdjustmentsType;
 
 public:
 
@@ -39,7 +40,8 @@ public:
 	  geometry_(io,false,params_.smallKs),
 	  dispersion_(params,geometry_),
 	  fTCoefsR2K_(params.largeKs,params.largeKs),
-	  latticeFunctions_(params_,geometry_,dispersion_)
+	  latticeFunctions_(params_,geometry_,dispersion_),
+	  adjustments_(latticeFunctions_,params_)
 	{
 		SizeType Nc = params_.largeKs;
 		SizeType dim = geometry_.dimension();
@@ -66,8 +68,8 @@ public:
 		coarseDispersion(barEpsilon);
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
-		bool lanczosReal = isOption("lanczosreal");
-		bool adjustMuLattice = isOption("adjustmulattice");
+		bool lanczosReal = adjustments_.isOption("lanczosreal");
+		bool adjustMuLattice = adjustments_.isOption("adjustmulattice");
 		SizeType omegasRealOrImag = (lanczosReal) ? params_.omegas :
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
@@ -79,7 +81,7 @@ public:
 
 		for (SizeType i = 0; i < iterations; ++i) {
 
-			if (adjustMuLattice) adjChemPot();
+			if (adjustMuLattice) adjustments_.adjChemPot();
 
 			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
 			std::cout<<"#gfcluster\n";
@@ -102,18 +104,13 @@ public:
 
 private:
 
-	bool isOption(PsimagLite::String what) const
-	{
-		return (params_.dcaOptions.find(what) != PsimagLite::String::npos);
-	}
-
 	void diagUpdate(MatrixType& gfCluster,
 	                MatrixType& gammaOmegaRealOrImag,
 	                const VectorRealType& ekbar,
 	                PsimagLite::FreqEnum freqEnum)
 	{
 		const MatrixType& gckfsc = latticeFunctions_.gf();
-		bool lanczosReal = isOption("lanczosreal");
+		bool lanczosReal = adjustments_.isOption("lanczosreal");
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc.n_row(),gckfsc.n_col());
 		EffectiveHamiltonianType effectiveHamiltonian(params_,geometry_,io_);
@@ -268,7 +265,7 @@ private:
 	            PsimagLite::FreqEnum freqEnum)
 	{
 		assert(freqEnum == PsimagLite::FREQ_MATSUBARA);
-		bool lanczosReal = isOption("lanczosreal");
+		bool lanczosReal = adjustments_.isOption("lanczosreal");
 
 		std::cout<<"#G0";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
@@ -369,52 +366,13 @@ private:
 		return params_.potentialV[index];
 	}
 
-	void adjChemPot() const
-	{
-		RealType mu = adjChemPot_();
-		std::cout<<"Old mu= "<<params_.mu<<" ";
-		params_.mu = mu;
-		std::cout<<"New mu= "<<params_.mu<<"\n";
-	}
-
-	RealType adjChemPot_() const
-	{
-		PairRealRealType aAndB = findAandB();
-		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
-			try {
-				RealType mu = adjChemPot_(aAndB, tolerance);
-				return mu;
-			} catch (std::exception& e) {}
-		}
-
-		throw PsimagLite::RuntimeError("adjChemPot failed\n");
-	}
-
-	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
-	{
-		typedef PsimagLite::RootFindingBisection<LatticeFunctionsType> RootFindingType;
-		RootFindingType  rootFinding(latticeFunctions_,aAndB.first, aAndB.second,1000,tol);
-		RealType mu = params_.mu;
-		rootFinding(mu);
-		return mu;
-	}
-
-	PairRealRealType findAandB() const
-	{
-		for (RealType value = 1.0; value < 100.0; value++) {
-			RealType value2 = latticeFunctions_(value) * latticeFunctions_(-value);
-			if (value2 < 0) return PairRealRealType(-value,value);
-		}
-
-		throw PsimagLite::RuntimeError("RootFinding init failed\n");
-	}
-
 	const ParametersType& params_;
 	typename InputNgType::Readable& io_;
 	GeometryType geometry_;
 	DispersionType dispersion_;
 	MatrixType fTCoefsR2K_;
 	LatticeFunctionsType latticeFunctions_;
+	AdjustmentsType adjustments_;
 }; // class DcaLoop
 
 } // namespace OpenDca
