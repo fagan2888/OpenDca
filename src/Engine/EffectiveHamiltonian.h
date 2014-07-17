@@ -117,8 +117,7 @@ public:
 			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
 		}
 
-		bool adjustMuCluster = (!adjustments_.isOption("noadjustmu") &
-		                        !adjustments_.isOption("adjustmulattice"));
+		bool adjustMuCluster = adjustments_.isOption("adjustmucluster");
 
 		if (adjustMuCluster) adjustments_.adjChemPot();
 

@@ -69,7 +69,8 @@ public:
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
-		bool adjustMuLattice = adjustments_.isOption("adjustmulattice");
+		bool adjustMuLattice = (!adjustments_.isOption("adjustmucluster") &
+		                        !adjustments_.isOption("noadjustmu"));
 		SizeType omegasRealOrImag = (lanczosReal) ? params_.omegas :
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);

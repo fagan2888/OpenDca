@@ -53,7 +53,7 @@ CorrectionVectorAlgorithm=Krylov
 FeAsMode=3
 
 DcaOptions=none
-DcaNumberOfMatsubaras=200
+NumberOfMatsubaras=200
 DcaOmegaTotal=2000
 DcaLargeKs=1
 DcaOmegaBegin=-10
@@ -65,6 +65,7 @@ DcaDelta=0.01
 DcaSolver=Lanczos
 DcaMatsubaraIterations=10
 DcaRealFreqIterations=0
+DcaTargetDensity=2
 LanczosEps=1e-6
 DynamicDmrgEps=1e-6
 SpectralEps=1e-6

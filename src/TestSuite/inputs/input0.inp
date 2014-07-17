@@ -46,7 +46,7 @@ AngularFactor=1
 DcaOptions=none
 DcaOmegaTotal=10
 DcaLargeKs=4
-DcaNumberOfMatsubaras=10
+NumberOfMatsubaras=10
 DcaOmegaBegin=0
 DcaOmegaStep=0.1
 DcaFinePoints=100
@@ -56,4 +56,5 @@ DcaDelta=0.1
 DcaSolver=Lanczos
 DcaMatsubaraIterations=10
 DcaRealFreqIterations=0
+DcaTargetDensity=1
 
