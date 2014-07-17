@@ -29,10 +29,9 @@ public:
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef RealType_ RealType;
 
-	ClusterFunctions(DcaToDmrgType* myInputPtr,
-	                 const ParamtersType& params,
+	ClusterFunctions(const ParamtersType& params,
 	                 typename InputNgType::Readable& io)
-	    : myInputPtr_(myInputPtr), params_(params), io_(io)
+	    : params_(params), io_(io)
 	{}
 
 	RealType operator()(RealType mu) const
@@ -41,10 +40,8 @@ public:
 		return 0.0;
 	}
 
-	void findGf(MatrixType& gfCluster)
+	void findGf(MatrixType& gfCluster, DcaToDmrgType& myInput)
 	{
-		DcaToDmrgType& myInput = *myInputPtr_;
-
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 
 		DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
@@ -82,10 +79,8 @@ public:
 		deAllocateSolverPtr(&solver);
 	}
 
-	void sweepParticleSectors()
+	void sweepParticleSectors(DcaToDmrgType& myInput)
 	{
-		DcaToDmrgType& myInput = *myInputPtr_;
-
 		RealType Eg = 1e6;
 		SizeType iMin = 0;
 		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
@@ -142,7 +137,6 @@ private:
 		solver2 = 0;
 	}
 
-	DcaToDmrgType* myInputPtr_;
 	const ParamtersType& params_;
 	typename InputNgType::Readable& io_;
 }; // ClusterFunctions

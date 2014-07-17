@@ -47,7 +47,7 @@ public:
 	  p_(2*params_.nofPointsInBathPerClusterPoint,params_.largeKs*params_.orbitals),
 	  gammaRealFreq_(params_.omegas,params_.largeKs*params_.orbitals),
 	  garbage_(0),
-	  clusterFunctions_(garbage_,params_,io)
+	  clusterFunctions_(params_,io)
 	{}
 
 	~EffectiveHamiltonian()
@@ -114,13 +114,13 @@ public:
 			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
 		}
 
-		bool adjustMuCluster = (!isOption("noadjustmu") & !isOption("adjustmulattice"));
+		//bool adjustMuCluster = (!isOption("noadjustmu") & !isOption("adjustmulattice"));
 
-		if (adjustMuCluster) adjChemPot();
+		//if (adjustMuCluster) adjChemPot();
 
-		clusterFunctions_.sweepParticleSectors();
+		clusterFunctions_.sweepParticleSectors(*garbage_);
 
-		clusterFunctions_.findGf(gfCluster);
+		clusterFunctions_.findGf(gfCluster,*garbage_);
 	}
 
 	const MatrixType& andersonParameters() const
