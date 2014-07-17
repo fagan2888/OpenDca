@@ -11,6 +11,8 @@
 #include "DcaSolverDmrg.h"
 #include "FreqEnum.h"
 #include "Geometry/Geometry.h"
+#include "RootFindingBisection.h"
+#include "ClusterFunctions.h"
 
 namespace OpenDca {
 
@@ -39,6 +41,8 @@ class EffectiveHamiltonian {
 	typedef typename DcaSolverDmrgType::DcaSolverBaseType DcaSolverBaseType;
 	typedef typename DcaSolverBaseType::VectorSizeType VectorSizeType;
 	typedef typename DcaSolverBaseType::PlotParamsType PlotParamsType;
+	typedef ClusterFunctions ClusterFunctionsType;
+	typedef std::pair<RealType,RealType> PairRealRealType;
 
 public:
 
@@ -119,8 +123,65 @@ public:
 			throw PsimagLite::RuntimeError("EffectiveHamiltonian::" + str);
 		}
 
+		bool adjustMuCluster = (!isOption("noadjustmu") & !isOption("adjustmulattice"));
+
+		if (adjustMuCluster) adjChemPot();
+
 		sweepParticleSectors();
 
+		findGf(gfCluster);
+	}
+
+	const MatrixType& andersonParameters() const
+	{
+		return p_;
+	}
+
+private:
+
+	void adjChemPot() const
+	{
+		RealType mu = adjChemPot_();
+		std::cout<<"Old mu= "<<params_.mu<<" ";
+		params_.mu = mu;
+		std::cout<<"New mu= "<<params_.mu<<"\n";
+	}
+
+	RealType adjChemPot_() const
+	{
+		PairRealRealType aAndB = findAandB();
+		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
+			try {
+				RealType mu = adjChemPot_(aAndB, tolerance);
+				return mu;
+			} catch (std::exception& e) {}
+		}
+
+		throw PsimagLite::RuntimeError("adjChemPot failed\n");
+	}
+
+	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
+	{
+		typedef PsimagLite::RootFindingBisection<ClusterFunctionsType> RootFindingType;
+		RootFindingType  rootFinding(clusterFunctions_,aAndB.first, aAndB.second,1000,tol);
+		RealType mu = params_.mu;
+		rootFinding(mu);
+		return mu;
+	}
+
+	PairRealRealType findAandB() const
+	{
+		for (RealType value = 1.0; value < 100.0; value++) {
+			RealType value2 = clusterFunctions_(value) * clusterFunctions_(-value);
+			if (value2 < 0) return PairRealRealType(-value,value);
+		}
+
+		throw PsimagLite::RuntimeError("RootFinding init failed\n");
+	}
+
+
+	void findGf(MatrixType& gfCluster)
+	{
 		DcaToDmrgType& myInput = *garbage_;
 
 		VaryingGeometryType geometry2(myInput,false,params_.smallKs);
@@ -159,13 +220,6 @@ public:
 
 		deAllocateSolverPtr(&solver);
 	}
-
-	const MatrixType& andersonParameters() const
-	{
-		return p_;
-	}
-
-private:
 
 	void sweepParticleSectors()
 	{
@@ -387,12 +441,18 @@ private:
 				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix
 	}
 
+	bool isOption(PsimagLite::String what) const
+	{
+		return (params_.dcaOptions.find(what) != PsimagLite::String::npos);
+	}
+
 	const ParametersType& params_;
 	const GeometryType& geometry_;
 	typename InputNgType::Readable& io_;
 	MatrixType p_;
 	MatrixType gammaRealFreq_;
 	DcaToDmrgType* garbage_;
+	ClusterFunctionsType clusterFunctions_;
 };
 
 template<typename RealType, typename GeometryType,typename InputNgType>
