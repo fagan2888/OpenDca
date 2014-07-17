@@ -5,7 +5,7 @@
 #include "Concurrency.h"
 #include "EffectiveHamiltonian.h"
 #include "../../../PsimagLite/src/FreqEnum.h"
-#include "DensityFunction.h"
+#include "LatticeFunctions.h"
 #include "RootFindingBisection.h"
 
 namespace OpenDca {
@@ -25,9 +25,9 @@ class DcaLoop {
 	                             GeometryType,
 	                             InputNgType> EffectiveHamiltonianType;
 	typedef typename EffectiveHamiltonianType::DcaToDmrgType DcaToDmrgType;
-	typedef DensityFunction<MatrixType,
+	typedef LatticeFunctions<MatrixType,
 	                        VectorType,
-	                        DispersionType> DensityFunctionType;
+	                        DispersionType> LatticeFunctionsType;
 	typedef std::pair<RealType,RealType> PairRealRealType;
 
 public:
@@ -39,7 +39,7 @@ public:
 	  geometry_(io,false,params_.smallKs),
 	  dispersion_(params,geometry_),
 	  fTCoefsR2K_(params.largeKs,params.largeKs),
-	  densityFunction_(params_,geometry_,dispersion_)
+	  latticeFunctions_(params_,geometry_,dispersion_)
 	{
 		SizeType Nc = params_.largeKs;
 		SizeType dim = geometry_.dimension();
@@ -71,11 +71,11 @@ public:
 		SizeType omegasRealOrImag = (lanczosReal) ? params_.omegas :
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
-		MatrixType gammaOmegaRealOrImag(densityFunction_.omegaSize(freqEnum),largeKs*norb);
+		MatrixType gammaOmegaRealOrImag(latticeFunctions_.omegaSize(freqEnum),largeKs*norb);
 		MatrixType G0inverse(omegasRealOrImag,largeKs*norb);
 		MatrixType gfclusterK(omegasRealOrImag,params_.largeKs*params_.orbitals);
 		RealType sigmaNorm = 0;
-		densityFunction_.setFreqType(freqEnum);
+		latticeFunctions_.setFreqType(freqEnum);
 
 		for (SizeType i = 0; i < iterations; ++i) {
 
@@ -91,11 +91,11 @@ public:
 			makeG0(G0inverse,gammaOmegaRealOrImag,barEpsilon,freqEnum);
 
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = densityFunction_.makeSigma(gfclusterK,G0inverse,freqEnum);
+			sigmaNorm = latticeFunctions_.makeSigma(gfclusterK,G0inverse,freqEnum);
 			dcaError -= sigmaNorm;
 
 			std::cout<<"sigma\n";
-			std::cout<<densityFunction_.sigma();
+			std::cout<<latticeFunctions_.sigma();
 			std::cout<<"Dca iteration= "<<i<<" error in sigma= "<<fabs(dcaError)<<"\n";
 		}
 	}
@@ -112,7 +112,7 @@ private:
 	                const VectorRealType& ekbar,
 	                PsimagLite::FreqEnum freqEnum)
 	{
-		const MatrixType& gckfsc = densityFunction_.gf();
+		const MatrixType& gckfsc = latticeFunctions_.gf();
 		bool lanczosReal = isOption("lanczosreal");
 		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc.n_row(),gckfsc.n_col());
@@ -143,7 +143,7 @@ private:
 
 		std::cout<<"#gfMatsubara\n";
 		for (SizeType i=0;i<gfClusterMatsubara->n_row();++i) {
-			RealType wn = densityFunction_.matsubara(i);
+			RealType wn = latticeFunctions_.matsubara(i);
 			std::cout<<wn<<" ";
 			for (SizeType j=0;j<gfClusterMatsubara->n_col();++j)
 				std::cout<<gfClusterMatsubara->operator()(i,j)<<" ";
@@ -185,12 +185,12 @@ private:
 	{
 		SizeType norb = params_.orbitals;
 		SizeType largeKs = params_.largeKs;
-		const MatrixType& gckfsc = densityFunction_.gf();
+		const MatrixType& gckfsc = latticeFunctions_.gf();
 
 		for (SizeType j=0;j<gckfsc.n_col();j++) integral[j]=0.0;
 
 		for (SizeType i=0;i<gckfsc.n_row();++i) { // loop over freq.
-			ComplexType omega = densityFunction_.omegaValue(i,freqEnum);
+			ComplexType omega = latticeFunctions_.omegaValue(i,freqEnum);
 			for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
 				for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
 					for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
@@ -199,7 +199,7 @@ private:
 						if (gamma1 != gamma2) continue;
 						assert(std::norm(gckfsc(i,index)) > 1e-20);
 						deltaOmega(i,index)= omega + params_.mu - ekbar[index]
-						      -densityFunction_.sigma()(i,index) - 1.0/gckfsc(i,index);
+						      -latticeFunctions_.sigma()(i,index) - 1.0/gckfsc(i,index);
 						integral[index] += std::imag(deltaOmega(i,index));
 					}
 				}
@@ -208,7 +208,7 @@ private:
 
 		std::cout<<"#DELTAOMEGA\n";
 		for (SizeType i=0;i<gckfsc.n_row();++i) { // loop over freq.
-			ComplexType omega = densityFunction_.omegaValue(i,freqEnum);
+			ComplexType omega = latticeFunctions_.omegaValue(i,freqEnum);
 			std::cout<<std::real(omega)<<" ";
 			for (SizeType j=0;j<gckfsc.n_col();++j)
 				std::cout<<deltaOmega(i,j)<<" ";
@@ -234,7 +234,7 @@ private:
 
 		std::cout<<"#GAMMA\n";
 		for (SizeType i=0;i<gammaOmega.n_row();++i) {
-			RealType wn = densityFunction_.matsubara(i);
+			RealType wn = latticeFunctions_.matsubara(i);
 			std::cout<<wn<<" ";
 			for (SizeType j=0;j<gammaOmega.n_col();++j)
 				std::cout<<gammaOmega(i,j)<<" ";
@@ -248,7 +248,7 @@ private:
 		RealType factor = -params_.omegaStep/M_PI;
 
 		for (SizeType i=0;i<params_.numberOfMatsubaras;++i) {
-			RealType wn = densityFunction_.matsubara(i);
+			RealType wn = latticeFunctions_.matsubara(i);
 
 			for (SizeType k=0;k<realOmega.n_col();++k) {
 				ComplexType sum = 0.0;
@@ -272,7 +272,7 @@ private:
 
 		std::cout<<"#G0";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
-			ComplexType omega = densityFunction_.omegaValue(i,(lanczosReal) ?
+			ComplexType omega = latticeFunctions_.omegaValue(i,(lanczosReal) ?
 			                    PsimagLite::FREQ_REAL : PsimagLite::FREQ_MATSUBARA);
 			for (SizeType j = 0;j < epsbar.size(); ++j) {
 				// j = clusterK + orb1*largeKs + orb2*largeKs*orbitals
@@ -340,8 +340,8 @@ private:
 	                    PsimagLite::FreqEnum freqEnum)
 	{
 		for (SizeType k=0;k<gammaFreq.n_col();++k) {
-			for (SizeType j=0;j<densityFunction_.omegaSize(freqEnum);++j) {
-				ComplexType z = densityFunction_.omegaValue(j,freqEnum);
+			for (SizeType j=0;j<latticeFunctions_.omegaSize(freqEnum);++j) {
+				ComplexType z = latticeFunctions_.omegaValue(j,freqEnum);
 				gammaFreq(j,k)=andersonG0(p,k,z);
 			}
 		}
@@ -392,8 +392,8 @@ private:
 
 	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
 	{
-		typedef PsimagLite::RootFindingBisection<DensityFunctionType> RootFindingType;
-		RootFindingType  rootFinding(densityFunction_,aAndB.first, aAndB.second,1000,tol);
+		typedef PsimagLite::RootFindingBisection<LatticeFunctionsType> RootFindingType;
+		RootFindingType  rootFinding(latticeFunctions_,aAndB.first, aAndB.second,1000,tol);
 		RealType mu = params_.mu;
 		rootFinding(mu);
 		return mu;
@@ -402,7 +402,7 @@ private:
 	PairRealRealType findAandB() const
 	{
 		for (RealType value = 1.0; value < 100.0; value++) {
-			RealType value2 = densityFunction_(value) * densityFunction_(-value);
+			RealType value2 = latticeFunctions_(value) * latticeFunctions_(-value);
 			if (value2 < 0) return PairRealRealType(-value,value);
 		}
 
@@ -414,7 +414,7 @@ private:
 	GeometryType geometry_;
 	DispersionType dispersion_;
 	MatrixType fTCoefsR2K_;
-	DensityFunctionType densityFunction_;
+	LatticeFunctionsType latticeFunctions_;
 }; // class DcaLoop
 
 } // namespace OpenDca

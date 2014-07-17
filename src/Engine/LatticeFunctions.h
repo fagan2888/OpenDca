@@ -1,11 +1,11 @@
-#ifndef OPENDCA_DENSITY_FUNC_H
-#define OPENDCA_DENSITY_FUNC_H
+#ifndef OPENDCA_LATTICE_FUNC_H
+#define OPENDCA_LATTICE_FUNC_H
 #include "../../../PsimagLite/src/FreqEnum.h"
 
 template<typename MatrixType,
          typename VectorType,
          typename DispersionType>
-class DensityFunction {
+class LatticeFunctions {
 
 	typedef typename MatrixType::value_type ComplexType;
 	typedef typename DispersionType::ParametersType ParamsType;
@@ -17,7 +17,7 @@ public:
 
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
 
-	DensityFunction(const ParamsType& params,
+	LatticeFunctions(const ParamsType& params,
 	                const GeometryType& geometry,
 	                const DispersionType& dispersion)
 	    : freqEnum_(PsimagLite::FREQ_MATSUBARA),
@@ -185,7 +185,7 @@ private:
 	mutable MatrixType gf_;
 	MatrixType sigma_;
 	const DispersionType& dispersion_;
-}; // DensityFunction
+}; // LatticeFunctions
 
-#endif // OPENDCA_DENSITY_FUNC_H
+#endif // OPENDCA_LATTICE_FUNC_H
 
