@@ -111,12 +111,11 @@ public:
 		RealType densityGs = 0;
 		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
 			myInput.muFeatureSet(i);
-			SizeType total = myInput.electrons(DcaToDmrgType::SPIN_UP) +
-			        myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			SizeType total = myInput.electrons(SPIN_UP) + myInput.electrons(SPIN_DOWN);
 			if (total == 0) continue;
-			std::cout<<"Trying with "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
+			std::cout<<"Trying with "<<myInput.electrons(SPIN_UP);
 			std::cout<<" electrons up and ";
-			std::cout<<myInput.electrons(DcaToDmrgType::SPIN_DOWN)<<" electrons down\n";
+			std::cout<<myInput.electrons(SPIN_DOWN)<<" electrons down\n";
 			VaryingGeometryType geometry2(myInput,false,params_.smallKs);
 			DcaSolverBaseType* solver = allocateSolverPtr(myInput,geometry2);
 			RealType density = solver->density(geometry2.numberOfSites(),params_.largeKs);
@@ -132,8 +131,8 @@ public:
 			myInput.muFeatureSet(iMin);
 			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
 			std::cout<<" in mu sector "<<iMin;
-			std::cout<<" electrons up "<<myInput.electrons(DcaToDmrgType::SPIN_UP);
-			std::cout<<" electrons down "<<myInput.electrons(DcaToDmrgType::SPIN_DOWN);
+			std::cout<<" electrons up "<<myInput.electrons(SPIN_UP);
+			std::cout<<" electrons down "<<myInput.electrons(SPIN_DOWN);
 			std::cout<<"\n";
 		}
 
@@ -143,8 +142,13 @@ public:
 	void updatePotentialV() const
 	{
 		assert(myInputPtr_);
-
 		myInputPtr_->updatePotentialV();
+	}
+
+	SizeType electrons(SpinEnum upOrDown) const
+	{
+		assert(myInputPtr_);
+		return myInputPtr_->electrons(upOrDown);
 	}
 
 private:

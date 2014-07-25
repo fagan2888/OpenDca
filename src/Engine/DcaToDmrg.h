@@ -3,6 +3,7 @@
 #include "Vector.h"
 #include "String.h"
 #include "Matrix.h"
+#include "DcaLoopGlobals.h"
 
 namespace OpenDca {
 
@@ -43,8 +44,6 @@ public:
 	typedef ParametersType_ ParametersType;
 	typedef InputNgType_ InputNgType;
 	typedef RealType_ RealType;
-
-	enum SpinEnum {SPIN_UP, SPIN_DOWN};
 
 	template<typename SomeMemResolvType>
 	SizeType memResolv(SomeMemResolvType& mres,

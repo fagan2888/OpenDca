@@ -18,32 +18,53 @@ public:
 
 	void adjChemPot() const
 	{
-		RealType mu = adjChemPot_();
+		static SizeType counter = 0;
+		bool printNvsMu = false;
+		bool printThings = (counter > 0) & printNvsMu;
+
+		if (printThings) {
+			for (RealType mu = -4.0; mu <= 0; mu += 0.1) {
+				params_.mu = mu;
+				functions_.updatePotentialV();
+				RealType fOfMu = functions_(mu);
+				std::cout<<mu<<" "<<fOfMu<<" NVSMU\n";
+			}
+
+			throw PsimagLite::RuntimeError("stop for testing\n");
+		}
+
+		counter++;
+
 		std::cout<<"Old mu= "<<params_.mu<<" ";
+		RealType mu = adjChemPot_();
 		params_.mu = mu;
 		functions_.updatePotentialV();
-		std::cout<<"New mu= "<<params_.mu<<"\n";
+
+		std::cout<<"New mu= "<<params_.mu<<" ";
+		if (!printThings) {
+			std::cout<<"\n";
+			return;
+		}
+
+		std::cout<<" n(mu)-n(target) = "<<functions_(mu)<<" ";
+		std::cout<<"n(target) = "<<params_.targetDensity<<" ";
+		std::cout<<" lanczos electrons Up = "<<functions_.electrons(SPIN_UP)<<" ";
+		std::cout<<" lanczos electrons Down = "<<functions_.electrons(SPIN_DOWN)<<"\n";
 	}
 
 	RealType adjChemPot_() const
 	{
 		PairRealRealType aAndB = findAandB();
-		for (RealType tolerance = 1e-3; tolerance < 1; tolerance *= 2) {
-			try {
-				RealType mu = adjChemPot_(aAndB, tolerance);
-				return mu;
-			} catch (std::exception& e) {}
-		}
-
-		throw PsimagLite::RuntimeError("adjChemPot failed\n");
+		RealType tolerance = 1e-3;
+		RealType mu = adjChemPot_(aAndB, tolerance);
+		return mu;
 	}
 
 	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
 	{
 		typedef PsimagLite::RootFindingBisection<FunctionsType> RootFindingType;
-		RootFindingType  rootFinding(functions_,aAndB.first, aAndB.second,1000,tol);
-		RealType mu = params_.mu;
-		rootFinding(mu);
+		RootFindingType  rootFinding(functions_,aAndB.first, aAndB.second,50,tol);
+		RealType mu = rootFinding();
 		return mu;
 	}
 

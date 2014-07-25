@@ -1,6 +1,9 @@
 #ifndef OPENDCA_LATTICE_FUNC_H
 #define OPENDCA_LATTICE_FUNC_H
 #include "../../../PsimagLite/src/FreqEnum.h"
+#include "DcaLoopGlobals.h"
+
+namespace OpenDca {
 
 template<typename MatrixType,
          typename VectorType,
@@ -10,9 +13,9 @@ class LatticeFunctions {
 	typedef typename MatrixType::value_type ComplexType;
 	typedef typename DispersionType::GeometryType GeometryType;
 
-	enum PrintEnum {PRINT_YES, PRINT_NO};
-
 public:
+
+	enum PrintEnum {PRINT_YES, PRINT_NO};
 
 	typedef typename DispersionType::ParametersType ParametersType;
 	typedef typename PsimagLite::Real<ComplexType>::Type RealType;
@@ -109,8 +112,6 @@ public:
 
 	const MatrixType& sigma() const { return sigma_; }
 
-private:
-
 	void makeGf(PsimagLite::FreqEnum freqEnum, PrintEnum printEnum) const
 	{
 		VectorType gckf(omegaSize(freqEnum));
@@ -135,6 +136,13 @@ private:
 			std::cout<<gf_;
 		}
 	}
+
+	SizeType electrons(SpinEnum upOrDown) const
+	{
+		throw PsimagLite::RuntimeError("LatticeFunctions has no integer electrons\n");
+	}
+
+private:
 
 	void makeGf(VectorType& gckf,
 	            SizeType K,
@@ -188,6 +196,8 @@ private:
 	MatrixType sigma_;
 	const DispersionType& dispersion_;
 }; // LatticeFunctions
+
+} // namespace OpenDca
 
 #endif // OPENDCA_LATTICE_FUNC_H
 

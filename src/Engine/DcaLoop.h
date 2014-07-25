@@ -81,7 +81,7 @@ public:
 		latticeFunctions_.setFreqType(freqEnum);
 
 		for (SizeType i = 0; i < iterations; ++i) {
-
+			latticeFunctions_.makeGf(freqEnum, LatticeFunctionsType::PRINT_YES);
 			if (adjustMuLattice) adjustments_.adjChemPot();
 
 			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
@@ -268,7 +268,7 @@ private:
 		assert(freqEnum == PsimagLite::FREQ_MATSUBARA);
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
 
-		std::cout<<"#G0";
+		std::cout<<"#G0\n";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
 			ComplexType omega = latticeFunctions_.omegaValue(i,(lanczosReal) ?
 			                    PsimagLite::FREQ_REAL : PsimagLite::FREQ_MATSUBARA);
@@ -280,8 +280,9 @@ private:
 				SizeType orb2 = tmp % params_.orbitals;
 				if (orb1 != orb2) continue;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
-				G0inverse(i,jj) = omega -epsbar[j] - gammakomega(i,jj);
-				std::cout<<1.0/G0inverse(i,jj)<<" ";
+				G0inverse(i,jj) = omega + params_.mu -epsbar[j] - gammakomega(i,jj);
+				ComplexType tmp2 = 1.0/G0inverse(i,jj);
+				std::cout<<tmp2<<" ";
 			}
 
 			std::cout<<"\n";

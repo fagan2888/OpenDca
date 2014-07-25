@@ -105,8 +105,8 @@ public:
 		if (geometry2.label(0) != "star")
 			throw PsimagLite::RuntimeError("ParallelDmrgSolver: only geometry star\n");
 
-		paramsDmrg_.electronsUp = myInput_.electrons(DcaToDmrgType::SPIN_UP);
-		paramsDmrg_.electronsDown = myInput_.electrons(DcaToDmrgType::SPIN_DOWN);
+		paramsDmrg_.electronsUp = myInput_.electrons(SPIN_UP);
+		paramsDmrg_.electronsDown = myInput_.electrons(SPIN_DOWN);
 		GsParamsType tsp(myInput_,model_);
 		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
 		dmrgSolver.main(geometry2_);

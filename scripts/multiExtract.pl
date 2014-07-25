@@ -10,49 +10,49 @@ defined($step) or die "USAGE: $0 file it orbitals beta matsubaras begin step\n";
 my $c0 = int($matsubaras/2);
 
 my $outfile = createFile($file,"gc",$it);
-system("perl extract.pl \"#GCKFSC\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#GCKFSC\" $it < $file > $outfile");
 commentLines($outfile,1);
 addFreq($outfile,"imag");
 
 for (my $i = 0; $i < $orbitals; ++$i) {
 	$outfile = createFile($file,"gf0$i",$it);
-	system("perl extract.pl \"#GFTMP0 $i\" $it < $file > $outfile");
+	system("perl ../scripts/extract.pl \"#GFTMP0 $i\" $it < $file > $outfile");
 	addFreq("$outfile","imag");
 }
 
 
 $outfile = createFile($file,"gamma",$it);
-system("perl extract.pl \"#gammaFreq\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#gammaFreq\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
 $outfile = createFile($file,"gf",$it);
-system("perl extract.pl \"#gfcluster\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#gfcluster\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","real");
 
 $outfile = createFile($file,"G0",$it);
-system("perl extract.pl \"#G0\" $it < $file > $outfile");
-commentLines("$outfile",1);
+system("perl ../scripts/extract.pl \"#G0\" $it < $file > $outfile");
+#commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
 $outfile = createFile($file,"oneoverdata2",$it);
-system("perl extract.pl \"#ONEOVERDATA2\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#ONEOVERDATA2\" $it < $file > $outfile");
 deleteColumn("$outfile",0);
 
 $outfile = createFile($file,"sigma",$it);
-system("perl extract.pl \"#SIGMA\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#SIGMA\" $it < $file > $outfile");
 commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
 $outfile = createFile($file,"delta",$it);
-system("perl extract.pl \"#DELTAOMEGA\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#DELTAOMEGA\" $it < $file > $outfile");
 deleteColumn("$outfile",0);
 #commentLines("$outfile",1);
 addFreq("$outfile","imag");
 
 $outfile = createFile($file,"gfMatsubara",$it);
-system("perl extract.pl \"#gfMatsubara\" $it < $file > $outfile");
+system("perl ../scripts/extract.pl \"#gfMatsubara\" $it < $file > $outfile");
 deleteColumn("$outfile",0);
 #commentLines("$outfile",1);
 addFreq("$outfile","imag");
