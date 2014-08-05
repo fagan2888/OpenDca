@@ -37,7 +37,9 @@ struct DcaParameters {
 	  - DcaFinePoints=integer Number of points for the coarse-graining. This is a
 	    maximum, and the geometry mesh will refine it if needed. Must be a perfect square.
 	  - DcaBeta=real Inverse temperature in hopping units
-	  - DcaMu=real Chemical potential (ignored used potentialV for now)
+	  - DcaMu=real Chemical potential
+	  - MuTolerance=real Tolerance for the equation n(mu) - n_target = 0
+	  - MuMaxIter=integer Max iterations for the equation n(mu) - n_target = 0
 	  - DcaDelta=real
 	  - DcaSolver=string Either Lanczos or Dmrg
 	  - DcaMatsubaraIterations=integer Number of self-consistent iterations done
@@ -72,6 +74,16 @@ struct DcaParameters {
 		io.readline(dcaOptions,"DcaOptions=");
 		io.readline(andersonFitCutoff,"DcaAndersonFitCutoff=");
 
+		muTolerance = 1e-3;
+		try {
+		io.readline(muTolerance,"MuTolerance=");
+		} catch (std::exception& e) {}
+
+		muMaxIter = 100;
+		try {
+			io.readline(muMaxIter,"MuMaxIterations=");
+		} catch (std::exception& e) {}
+
 		nthreads = 1;
 		try {
 			io.readline(nthreads,"Threads=");
@@ -96,6 +108,8 @@ struct DcaParameters {
 	SizeType orbitals;
 	SizeType nthreads;
 	SizeType andersonFitCutoff;
+	SizeType muMaxIter;
+	RealType muTolerance;
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;

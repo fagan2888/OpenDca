@@ -72,15 +72,10 @@ public:
 	RealType adjChemPot_() const
 	{
 		PairRealRealType aAndB = findAandB();
-		RealType tolerance = 1e-3;
-		RealType mu = adjChemPot_(aAndB, tolerance);
-		return mu;
-	}
-
-	RealType adjChemPot_(const PairRealRealType& aAndB, RealType tol) const
-	{
 		typedef PsimagLite::RootFindingBisection<FunctionsType> RootFindingType;
-		RootFindingType  rootFinding(functions_,aAndB.first, aAndB.second,50,tol);
+		RealType tol = params_.muTolerance;
+		SizeType iter = params_.muMaxIter;
+		RootFindingType  rootFinding(functions_,aAndB.first, aAndB.second,iter,tol);
 		RealType mu = rootFinding();
 		return mu;
 	}
