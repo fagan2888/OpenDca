@@ -3,7 +3,7 @@
 # Licensing
 The full software license for OpenDca version 1.0.0 
 can be found in
-file LICENSE. 
+file COPYING. 
 OpenDca is a free and open source implementation of the 
 DCA algorithm for models of strongly correlated electrons. 
 You are welcomed to use it and publish data 

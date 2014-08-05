@@ -41,22 +41,16 @@ struct DcaLoopGlobals {
 
 const PsimagLite::String DcaLoopGlobals::license=
 "Copyright (c) 2014, UT-Battelle, LLC\n"
-"All rights reserved\n"
 "\n"
-"[OpenDca, Version 1.0]\n"
+"OpenDca, Version 1.0\n"
 "\n"
-"*********************************************************\n"
-"THE SOFTWARE IS SUPPLIED BY THE COPYRIGHT HOLDERS AND\n"
-"CONTRIBUTORS \"AS IS\" AND ANY EXPRESS OR IMPLIED\n"
-"WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED\n"
-"WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A\n"
-"PARTICULAR PURPOSE ARE DISCLAIMED.\n"
-"\n"
-"Please see full open source license included in file LICENSE.\n"
-"*********************************************************\n"
+"OpenDca is distributed in the hope that it will be useful,\n"
+"but WITHOUT ANY WARRANTY; without even the implied warranty of\n"
+"MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the\n"
+"GNU General Public License for more details.\n"
 "\n";
 
-}; // namespace OpenDca
+} // namespace OpenDca
 /*@}*/
 #endif
 
