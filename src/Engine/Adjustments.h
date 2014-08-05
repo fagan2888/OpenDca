@@ -1,4 +1,8 @@
 /*
+Copyright (c) 2014, UT-Battelle, LLC
+
+OpenDca, Version 1.0
+
 This file is part of OpenDca.
 OpenDca is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
