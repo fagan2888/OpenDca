@@ -1,27 +1,7 @@
 # Quick Start
  
-# Licensing
-The full software license for OpenDca version 1.0.0 
-can be found in
-file COPYING. 
-OpenDca is a free and open source implementation of the 
-DCA algorithm for models of strongly correlated electrons. 
-You are welcomed to use it and publish data 
-obtained with OpenDca. If you do, please cite this
-work .
-
-
-# Hash of the latest commit is also posted at
-
-https://web.ornl.gov/~gz1/hashes.html
-
-
-# How To Cite This Work
-
-TBW.
-
-
-# DISCLAIMER
+# Disclaimer and Licensing
+ 
 OpenDca is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
@@ -32,6 +12,26 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
+The full software license for OpenDca version 1.0.0 
+can be found in
+file COPYING. 
+
+# Please cite this work
+
+OpenDca is a free and open source implementation of the 
+DCA algorithm for models of strongly correlated electrons. 
+The full software license for OpenDca version 1.0.0 
+can be found in
+file COPYING. 
+You are welcomed to use it and publish data 
+obtained with OpenDca. If you do, please cite this
+work. Explain How To Cite This Work. FIXME. TBW.
+
+
+# Hash of the latest commit 
+
+Hash of the latest commit is also posted at
+https://web.ornl.gov/~gz1/hashes.html
 
 # Building and Running OpenDca
 
@@ -48,6 +48,7 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 
 * make or gmake (only needed to use the Makefile)
 * perl (may be needed to run some auxiliary script)
+* doxygen (to build the manual) 
 
 ## Quick Start
 
@@ -78,6 +79,7 @@ if you don't have them.
 4. Now issue
 
     cd OpenDca/src/
+
     make
 
 5. You can run it with
@@ -94,4 +96,16 @@ Run
 
 to see the meaning of the arguments.
 
+# Manual
 
+To compile the manual please follow these steps
+
+    cd OpenDca
+
+    doxygen Doxygen
+
+    cd latex/
+
+    make
+
+and you'll get the file `refman.pdf`
