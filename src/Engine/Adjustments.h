@@ -36,7 +36,7 @@ public:
 	void adjChemPot() const
 	{
 		static SizeType counter = 0;
-		bool printNvsMu = true;
+		bool printNvsMu = isOption("printNvsMu");
 		bool printThings = (counter > 0) & printNvsMu;
 
 		if (printThings) {
