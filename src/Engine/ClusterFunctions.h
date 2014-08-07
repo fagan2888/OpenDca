@@ -150,7 +150,7 @@ public:
 			std::cout<<" in mu sector "<<iMin;
 			std::cout<<" electrons up "<<myInput.electrons(SPIN_UP);
 			std::cout<<" electrons down "<<myInput.electrons(SPIN_DOWN);
-			std::cout<<"\n";
+			std::cout<<"mu = "<<params_.mu<<"\n";
 		}
 
 		return densityGs;

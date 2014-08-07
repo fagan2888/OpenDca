@@ -76,7 +76,6 @@ public:
 	// Get LanczosParams from Gf
 	void build(MatrixType& gf,
 	           const VectorRealType& ekbar,
-	           const VectorRealType& integral,
 	           PsimagLite::FreqEnum freqEnum)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
@@ -95,7 +94,7 @@ public:
 					std::cout<<gfTmp[i]<<"\n";
 				}
 
-				andersonFit.fit(p,gfTmp,integral[jj]);
+				andersonFit.fit(p,gfTmp);
 				std::cout<<"#PANDERSON"<<site<<" "<<orb<<"\n";
 				for (SizeType i=0;i<p.size();++i) std::cout<<i<<" "<<p[i]<<"\n";
 

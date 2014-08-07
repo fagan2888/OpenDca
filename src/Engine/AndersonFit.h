@@ -173,15 +173,13 @@ public:
 	// Project some Gf to get the Anderson PArameters, V_p and e_p
 	// p[0] to p[n-1] contains V_p
 	// p[n] to p[2n-1] contains e_p
-	void fit(VectorRealType& p,const VectorType& Gf,RealType integral)
+	void fit(VectorRealType& p,const VectorType& Gf)
 	{
 		bool converged = false;
 
-		std::cout<<"AndersonFit fit with integral "<<integral<<"\n";
-
 		 for (RealType tolerance=1e-6;tolerance<1;tolerance *=10) {
 			std::fill(p.begin(), p.end(), 0.0);
-			int err = aux(p,Gf,tolerance,integral);
+			int err = aux(p,Gf,tolerance);
 			if (err > 0) {
 				converged = true;
 				break;
@@ -202,7 +200,7 @@ private:
 	// Project some Gf to get the Anderson PArameters, V_p and e_p
 	// p[0] to p[n-1] contains V_p
 	// p[n] to p[2n-1] contains e_p
-	int aux(VectorRealType& p,const VectorType& Gf,RealType tolerance,RealType integral)
+	int aux(VectorRealType& p,const VectorType& Gf,RealType tolerance)
 	{
 		SizeType maxIter = 10000;
 		RealType delta = 1e-4;

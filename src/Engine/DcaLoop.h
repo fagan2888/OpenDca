@@ -129,17 +129,16 @@ private:
 	{
 		const MatrixType& gckfsc = latticeFunctions_.gf();
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
-		VectorRealType integral(ekbar.size());
 		MatrixType deltaOmega(gckfsc.n_row(),gckfsc.n_col());
 		EffectiveHamiltonianType effectiveHamiltonian(params_,geometry_,io_);
 
 		std::cerr<<"gamma omega...\n";
-		getDeltaOmega(deltaOmega,integral,ekbar,freqEnum);
+		getDeltaOmega(deltaOmega,ekbar,freqEnum);
 
 		MatrixType gammaOmega(params_.numberOfMatsubaras,gckfsc.n_col());
 		getGammaOmega(gammaOmega,deltaOmega,freqEnum);
 		std::cerr<<"make h params...\n";
-		effectiveHamiltonian.build(gammaOmega,ekbar,integral,freqEnum);
+		effectiveHamiltonian.build(gammaOmega,ekbar,freqEnum);
 		std::cout<<effectiveHamiltonian;
 
 		//throw PsimagLite::RuntimeError("testing\n");
@@ -194,15 +193,12 @@ private:
 
 	//! Delta_k(omega) = omega + ekbar(k) -sigma(omega,k) - 1.0/gckfsc_(omega,k)
 	void getDeltaOmega(MatrixType& deltaOmega,
-	                   VectorRealType& integral,
 	                   const VectorRealType& ekbar,
 	                   PsimagLite::FreqEnum freqEnum)
 	{
 		SizeType norb = params_.orbitals;
 		SizeType largeKs = params_.largeKs;
 		const MatrixType& gckfsc = latticeFunctions_.gf();
-
-		for (SizeType j=0;j<gckfsc.n_col();j++) integral[j]=0.0;
 
 		for (SizeType i=0;i<gckfsc.n_row();++i) { // loop over freq.
 			ComplexType omega = latticeFunctions_.omegaValue(i,freqEnum);
@@ -215,7 +211,6 @@ private:
 						assert(std::norm(gckfsc(i,index)) > 1e-20);
 						deltaOmega(i,index)= omega + params_.mu - ekbar[index]
 						      -latticeFunctions_.sigma()(i,index) - 1.0/gckfsc(i,index);
-						integral[index] += std::imag(deltaOmega(i,index));
 					}
 				}
 			}
@@ -228,11 +223,6 @@ private:
 			for (SizeType j=0;j<gckfsc.n_col();++j)
 				std::cout<<deltaOmega(i,j)<<" ";
 			std::cout<<"\n";
-		}
-
-		for (SizeType j=0;j<gckfsc.n_col();++j) {
-			integral[j]=integral[j]*(params_.omegaStep);
-			std::cerr<<"integral["<<j<<"]="<<integral[j]<<"\n";
 		}
 	}
 
