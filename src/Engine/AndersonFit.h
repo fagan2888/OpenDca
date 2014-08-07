@@ -172,9 +172,9 @@ public:
 	: params_(params),rng_(0),randomize_(false)
 	{
 		PsimagLite::String opt = params_.dcaOptions;
-		randomize_ = (opt.find("FittingRandomize") != PsimagLite::String::npos);
+		randomize_ = isOption("FittingRandomize");
 		if (!randomize_) {
-			randomize_ = (opt.find("RandomizeFitting") != PsimagLite::String::npos);
+			randomize_ = isOption("RandomizeFitting");
 		}
 	}
 
@@ -185,7 +185,7 @@ public:
 	{
 		bool converged = false;
 
-		 for (RealType tolerance=1e-6;tolerance<1;tolerance *=10) {
+		 for (RealType tolerance=1e-12;tolerance<1;tolerance *=10) {
 			std::fill(p.begin(), p.end(), 0.0);
 			int err = aux(p,Gf,tolerance);
 			if (err > 0) {
@@ -210,9 +210,9 @@ private:
 	// p[n] to p[2n-1] contains e_p
 	int aux(VectorRealType& p,const VectorType& Gf,RealType tolerance)
 	{
-		SizeType maxIter = 10000;
-		RealType delta = 1e-4;
-		RealType maxGradient = 1e-3;
+		SizeType maxIter = params_.andersonFitMaxIter;
+		RealType delta = params_.andersonFitDelta;
+		RealType maxGradient = params_.andersonFitMaxGradient;
 		AndersonDistanceType andersonDistance(params_,Gf);
 		MinimizerType minimizer(andersonDistance,maxIter,maxGradient);
 
@@ -246,6 +246,11 @@ private:
 
 		for (SizeType k=p.size()/2;k<p.size();++k)
 			p[k] = rng_() - 0.5;
+	}
+
+	bool isOption(PsimagLite::String what) const
+	{
+		return (params_.dcaOptions.find(what) != PsimagLite::String::npos);
 	}
 
 	const ParametersType& params_;

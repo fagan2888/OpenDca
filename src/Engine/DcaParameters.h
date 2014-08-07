@@ -35,7 +35,7 @@ struct DcaParameters {
 	  - DcaLargeKs=integer Number of ``cluster'' points (exclude the bath here)
 	  - NumberOfMatsubaras=integer Total number of matsubara freq.
 	  - DcaFinePoints=integer Number of points for the coarse-graining. This is a
-	    maximum, and the geometry mesh will refine it if needed. Must be a perfect square.
+		maximum, and the geometry mesh will refine it if needed. Must be a perfect square.
 	  - DcaBeta=real Inverse temperature in hopping units
 	  - DcaMu=real Chemical potential
 	  - MuTolerance=real Tolerance for the equation n(mu) - n_target = 0
@@ -43,12 +43,15 @@ struct DcaParameters {
 	  - DcaDelta=real
 	  - DcaSolver=string Either Lanczos or Dmrg
 	  - DcaMatsubaraIterations=integer Number of self-consistent iterations done
-	    with Matsubara freq.
+		with Matsubara freq.
 	  - DcaRealFreqIterations=integer Number of self-consistent iterations done
-	    with real freq.
+		with real freq.
 	  - DcaOptions=string Either none or nomufeature
-	  - DcaAndersonFitCutoff=real Maximum Matsubara freq. in absolute value to be
-	                              considered for the Anderson fitting.
+	  - AndersonFitCutoff=real Maximum Matsubara freq. in absolute value to be
+								  considered for the Anderson fitting.
+	  - AndersonFitMaxIter=integer Maximum iterations for the Anderson fitting. [Optional]
+	  - AndersonFitDelta=real Delta for the Anderson fitting. [Optional]
+	  - AndersonFitMaxGradient=real Max Gradient for the Anderson fitting. [Optional]
 	  - Threads=integer [Optional]
 	*/
 	template<typename SomeInputType>
@@ -72,11 +75,26 @@ struct DcaParameters {
 		io.readline(imagIterations,"DcaMatsubaraIterations=");
 		io.readline(realIterations,"DcaRealFreqIterations=");
 		io.readline(dcaOptions,"DcaOptions=");
-		io.readline(andersonFitCutoff,"DcaAndersonFitCutoff=");
+		io.readline(andersonFitCutoff,"AndersonFitCutoff=");
+
+		andersonFitMaxIter = 1e4;
+		try {
+			io.readline(andersonFitMaxIter,"AndersonFitMaxIter=");
+		} catch (std::exception& e) {}
+
+		andersonFitDelta = 1e-4;
+		try {
+			io.readline(andersonFitDelta,"AndersonFitDelta=");
+		} catch (std::exception& e) {}
+
+		andersonFitMaxGradient = 1e-3;
+		try {
+			io.readline(andersonFitMaxGradient,"AndersonFitMaxGradient=");
+		} catch (std::exception& e) {}
 
 		muTolerance = 1e-3;
 		try {
-		io.readline(muTolerance,"MuTolerance=");
+			io.readline(muTolerance,"MuTolerance=");
 		} catch (std::exception& e) {}
 
 		muMaxIter = 100;
@@ -108,8 +126,11 @@ struct DcaParameters {
 	SizeType orbitals;
 	SizeType nthreads;
 	SizeType andersonFitCutoff;
+	SizeType andersonFitMaxIter;
 	SizeType muMaxIter;
 	RealType muTolerance;
+	RealType andersonFitDelta;
+	RealType andersonFitMaxGradient;
 	RealType omegaBegin;
 	RealType omegaStep;
 	RealType beta;

@@ -53,7 +53,7 @@ https://web.ornl.gov/~gz1/hashes.html
 ## Quick Start
 
 1. Use your distribution repository tool to install gcc with support for C++,
-the LAPACK and BLAS libraries, the gsl library, make, and git 
+the LAPACK and BLAS libraries, the gsl library, make, perl, doxygen and git 
 if you don't have them.
 
 2. Issue
