@@ -1,0 +1,78 @@
+TotalNumberOfSites=3
+NumberOfTerms=1
+
+DegreesOfFreedom=3
+GeometryKind=star
+BathSitesPerSite=2
+GeometryOptions=none
+Connectors 3 3
+0.2 0 0
+0 0.2 0
+0 0 0.2
+
+Connectors 3 3
+0.2 0 0
+0 0.2 0
+0 0 0.2
+
+hubbardU        4 1.0 0.7 0.8 0.1	
+potentialV     18 
+		  -3 0 2 
+  
+                  -3 0 2
+
+                  -3 0 2
+		  
+		  
+
+                  -3 0 2
+
+                  -3 0 2
+
+                  -3 0 2 
+Model=FeAsBasedSc
+Orbitals=3
+SolverOptions=none
+CorrectionA=0
+Version=version
+OutputFile=data2.txt
+InfiniteLoopKeptStates=100
+FiniteLoops 6    
+-1 150 0 1 150 0 
+-1 200 0 1 200 0 
+-1 300 0 1 300 0 
+
+TargetElectronsUp=6
+TargetElectronsDown=6
+DcaTargetDensity=2
+
+TSPSites 2  1 0
+TSPLoops 2  0 0
+TSPProductOrSum=sum
+DynamicDmrgType=0
+CorrectionVectorOmega=0
+CorrectionVectorEta=0.1
+CorrectionVectorAlgorithm=Krylov
+
+FeAsMode=3
+
+DcaOptions=adjustmucluster,RandomizeFitting
+NumberOfMatsubaras=500
+DcaOmegaTotal=2000
+DcaLargeKs=1
+DcaOmegaBegin=-10
+DcaOmegaStep=0.01
+DcaFinePoints=2500
+DcaBeta=100
+DcaMu=0
+DcaDelta=0.01
+DcaSolver=Lanczos
+DcaMatsubaraIterations=2
+DcaRealFreqIterations=0
+DcaAndersonFitCutoff=2
+LanczosEps=1e-6
+DynamicDmrgEps=1e-6
+SpectralEps=1e-6
+MuTolerance=1e-2
+MuMaxIter=50
+
