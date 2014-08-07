@@ -38,7 +38,9 @@ public:
 	typedef RealType FieldType;
 
 	AndersonDistance(const ParametersType& params,const VectorType& gf)
-	: params_(params),gf_(gf),matsubaras_(params_.numberOfMatsubaras)
+	: params_(params),
+	  gf_(gf),
+	  matsubaras_(params_.numberOfMatsubaras)
 	{
 		SizeType nwn = static_cast<SizeType>(params_.numberOfMatsubaras/2);
 		for (SizeType i=0;i<params_.numberOfMatsubaras;++i)
@@ -167,8 +169,14 @@ class AndersonFit {
 public:
 
 	AndersonFit(const ParametersType& params)
-	: params_(params),rng_(0)
-	{}
+	: params_(params),rng_(0),randomize_(false)
+	{
+		PsimagLite::String opt = params_.dcaOptions;
+		randomize_ = (opt.find("FittingRandomize") != PsimagLite::String::npos);
+		if (!randomize_) {
+			randomize_ = (opt.find("RandomizeFitting") != PsimagLite::String::npos);
+		}
+	}
 
 	// Project some Gf to get the Anderson PArameters, V_p and e_p
 	// p[0] to p[n-1] contains V_p
@@ -208,11 +216,7 @@ private:
 		AndersonDistanceType andersonDistance(params_,Gf);
 		MinimizerType minimizer(andersonDistance,maxIter,maxGradient);
 
-		for (SizeType k=0;k<p.size()/2;++k)
-			p[k]=1.0;
-
-		for (SizeType k=p.size()/2;k<p.size();++k)
-			p[k] = 0.0;
+		setInitialP(p);
 
 		int err=minimizer.conjugateFr(p,delta,tolerance);
 
@@ -227,8 +231,26 @@ private:
 		return err;
 	}
 
+	void setInitialP(VectorRealType& p)
+	{
+		for (SizeType k=0;k<p.size()/2;++k)
+			p[k]=1.0;
+
+		for (SizeType k=p.size()/2;k<p.size();++k)
+			p[k] = 0.0;
+
+		if (!randomize_) return;
+
+		for (SizeType k=0;k<p.size()/2;++k)
+			p[k] = 2.0 * (rng_() - 0.5);
+
+		for (SizeType k=p.size()/2;k<p.size();++k)
+			p[k] = rng_() - 0.5;
+	}
+
 	const ParametersType& params_;
 	RngType rng_;
+	bool randomize_;
 };
 
 }
