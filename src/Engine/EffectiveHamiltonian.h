@@ -166,11 +166,11 @@ private:
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		MatrixType tCluster(Nc*params_.orbitals,Nc*params_.orbitals);
 		MatrixType tBathCluster(nBath,Nc*Nc*params_.orbitals);
-		VectorType lambda(Nc*Nc*nBath*params_.orbitals);
+		VectorType vbar(Nc*Nc*nBath*params_.orbitals);
 
 		ft(tCluster,ekbar);
-		ft5(tBathCluster,p_,0);
-		calcBathLambda(lambda,p_,nBath);
+		ft5(tBathCluster,p_);
+		calcBathVbar(vbar,p_);
 
 		std::cout<<"tCluster\n";
 		std::cout<<tCluster;
@@ -178,7 +178,7 @@ private:
 		std::cout<<"tBathCluster\n";
 		std::cout<<tBathCluster;
 
-		return new DcaToDmrgType(params_,tCluster,tBathCluster,lambda,geometry_,io);
+		return new DcaToDmrgType(params_,tCluster,tBathCluster,vbar,geometry_,io);
 	}
 
 	void ft(MatrixType& dest,const VectorRealType& src) const
@@ -207,24 +207,25 @@ private:
 		}
 	}
 
-	void ft5(MatrixType& dest,const MatrixType& src,SizeType offset) const
+	void ft5(MatrixType& dest,const MatrixType& src) const
 	{
 		for (SizeType gamma = 0; gamma < params_.orbitals; ++gamma)
-			ft5(dest,src,offset,gamma);
+			ft5(dest,src,gamma);
 	}
 
-	void ft5(MatrixType& dest,const MatrixType& src,SizeType offset,SizeType gamma) const
+	void ft5(MatrixType& dest,const MatrixType& src,SizeType gamma) const
 	{
 		SizeType Nc = params_.largeKs;
+		SizeType nBath = dest.n_row();
 
-		for (SizeType b=0;b<dest.n_row();++b) { // bath
+		for (SizeType b=0;b<nBath;++b) { // bath
 			for (SizeType i=0;i<Nc;++i) { //cluster real space
 				for (SizeType j=0;j<Nc;++j) { //cluster real space
 					dest(b,i+j*Nc+gamma*Nc*Nc) = 0.0;
 					for (SizeType k=0;k<Nc;++k) { //cluster k-space
 						RealType tmp = krProduct(k,i,j);
 						dest(b,i+j*Nc+gamma*Nc*Nc)+=
-						ComplexType(cos(tmp),sin(tmp))*src(b+offset,k+gamma*Nc);
+						ComplexType(cos(tmp),sin(tmp))*src(b + nBath,k+gamma*Nc);
 					}
 
 					dest(b,i+j*Nc+gamma*Nc*Nc)=std::real(dest(b,i+j*Nc+gamma*Nc*Nc))/Nc;
@@ -233,33 +234,33 @@ private:
 		}
 	}
 
-	void calcBathLambda(VectorType& lambda,const MatrixType& src,SizeType offset) const
+	void calcBathVbar(VectorType& vbar,const MatrixType& src) const
 	{
 		for (SizeType gamma = 0; gamma < params_.orbitals; ++gamma)
-			calcBathLambda(lambda,src,offset,gamma);
+			calcBathVbar(vbar,src,gamma);
 	}
 
-	void calcBathLambda(VectorType& lambda,
-	                    const MatrixType& src,
-	                    SizeType offset,
-	                    SizeType gamma) const
+	// src is (2 * nbath, Nc * orbitals)
+	void calcBathVbar(VectorType& vbar,
+	                  const MatrixType& src,
+	                  SizeType gamma) const
 	{
 		SizeType Nc=params_.largeKs;
 		SizeType nBath = static_cast<SizeType>(0.5*src.n_row());
-		assert(lambda.size() == Nc*Nc*nBath*params_.orbitals);
+		assert(vbar.size() == Nc*Nc*nBath*params_.orbitals);
 
 		for (SizeType i=0;i<nBath;i++) { // i is in the bath
 			SizeType ii = (i + nBath*gamma)*Nc*Nc;
 			for (SizeType j=0;j<Nc;j++) { // j is in the cluster (real space)
-				for (SizeType s=0;s<Nc;s++) { // j is in the cluster (real space)
-					lambda[j+s*Nc+ii]=0.0;
+				for (SizeType s=0;s<Nc;s++) { // s is in the cluster (real space)
+					vbar[j+s*Nc+ii]=0.0;
 					for (SizeType k=0;k<Nc;k++) { // k is in the cluster (k-space)
 						RealType tmp = krProduct(k,j,s);
-						lambda[j+s*Nc+ii]+=
-						ComplexType(cos(tmp),sin(tmp))*src(i+offset,k+gamma*Nc);
+						vbar[j+s*Nc+ii]+=
+						ComplexType(cos(tmp),sin(tmp))*src(i,k+gamma*Nc);
 					}
 
-					lambda[j+s*Nc+ii] /= Nc;
+					vbar[j+s*Nc+ii] /= Nc;
 				}
 			}
 		}
