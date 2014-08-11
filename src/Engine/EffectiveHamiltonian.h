@@ -105,6 +105,12 @@ public:
 		inversionSymmetry(p_,0,nBath);
 		inversionSymmetry(p_,nBath,p_.n_row());
 
+		bool allbathSitesEqual = adjustments_.isOption("AllBathSitesEqual");
+		if (allbathSitesEqual) bathSitesSymmetry(p_);
+
+		bool allOrbitalsEqual = adjustments_.isOption("AllOrbitalsEqual");
+		if (allOrbitalsEqual) orbitalsSymmetry(p_);
+
 		std::cout<<"#REALGAMMA\n";
 		std::cout<<gammaRealFreq_.n_row()<<" "<<gammaRealFreq_.n_col()<<"\n";
 		for (SizeType i=0;i<gammaRealFreq_.n_row();++i) {
@@ -310,6 +316,27 @@ private:
 		for (int i=start;i<end;++i)
 			for (SizeType j=0;j<p.n_col();++j)
 				p(i,j)=tempMatrix(i-start,j); // andersonp = tempMatrix
+	}
+
+	void bathSitesSymmetry(MatrixType& p)
+	{
+		SizeType nBath = static_cast<SizeType>(0.5*p.n_row());
+		for (SizeType bathSite = 1; bathSite < nBath; ++bathSite) {
+			for (SizeType j = 0; j < p_.n_col(); ++j) {
+				p(bathSite, j) = p(0, j);
+				p(bathSite + nBath, j) = p(nBath, j);
+			}
+		}
+	}
+
+	void orbitalsSymmetry(MatrixType& p)
+	{
+		SizeType norbitals = params_.orbitals;
+
+		for (SizeType orbital = 1; orbital < norbitals; ++orbital)
+			for (SizeType j = 0; j < p_.n_row(); ++j)
+				for (SizeType k = 0; k < params_.largeKs; ++k)
+					p(j, k + orbital*params_.largeKs) = p(j, k);
 	}
 
 	const ParametersType& params_;

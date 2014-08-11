@@ -392,7 +392,9 @@ private:
 		SizeType csno1 = static_cast<SizeType>(ind/params_.orbitals);
 		SizeType csno2 = static_cast<SizeType>(jnd/params_.orbitals);
 		SizeType largeKs2 = params_.largeKs * params_.largeKs;
-		SizeType index = csno1 + csno2*params_.largeKs + alpha* largeKs2;
+		SizeType nBath = static_cast<SizeType>(lambda.size()/params_.orbitals);
+		SizeType alphaCorrected = orbitalBathToBathOrbital(alpha, nBath);
+		SizeType index = csno1 + csno2*params_.largeKs + alphaCorrected* largeKs2;
 		assert(index < lambda.size());
 		return std::real(lambda[index]);
 	}
@@ -429,6 +431,12 @@ private:
 		bool b = (ind != 4 && ind != 5);
 		b &= (ind != 6 && ind != 7);
 		return b;
+	}
+
+	SizeType orbitalBathToBathOrbital(SizeType alpha, SizeType nBath) const
+	{
+		div_t q = div(alpha,params_.orbitals);
+		return q.rem * nBath + q.quot;
 	}
 
 	void setHoppings(VectorRealType& v, const MatrixRealType& hoppings) const

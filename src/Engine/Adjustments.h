@@ -37,7 +37,7 @@ public:
 	{
 		static SizeType counter = 0;
 		bool printNvsMu = isOption("printNvsMu");
-		bool printThings = (counter > 0) & printNvsMu;
+		bool printThings = printNvsMu;
 
 		if (printThings) {
 			for (RealType mu = -4.0; mu <= 0; mu += 0.1) {
