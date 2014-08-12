@@ -114,7 +114,7 @@ public:
 		deAllocateSolverPtr(&solver);
 	}
 
-	RealType sweepParticleSectors() const
+	RealType sweepParticleSectors(bool last = false) const
 	{
 		if (!myInputPtr_) {
 			PsimagLite::String str("sweepParticleSectors: must call build first\n");
@@ -147,6 +147,7 @@ public:
 		if (myInput.muFeatureSize() > 0) {
 			myInput.muFeatureSet(iMin);
 			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
+			if (last) std::cout<<" BEFORE GF ";
 			std::cout<<" in mu sector "<<iMin;
 			std::cout<<" electrons up "<<myInput.electrons(SPIN_UP);
 			std::cout<<" electrons down "<<myInput.electrons(SPIN_DOWN);

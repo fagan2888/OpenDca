@@ -141,8 +141,8 @@ public:
 					getBathPoint(r2,alpha2,j,clusterSize,nBathOrbitals);
 
 					if (alpha==alpha2 && r!=r2) {
-						hubbardParams_.hoppings(ind,jnd) =
-						  lambdaCorrected(lambda,r,r2,alpha);
+						hubbardParams_.hoppings(ind,jnd) = 0.0;
+						  //lambdaCorrected(lambda,r,r2,alpha);
 					}
 
 					if (alpha==alpha2 && r==r2) {

@@ -143,7 +143,7 @@ public:
 
 		if (adjustMuCluster) adjustments_.adjChemPot();
 
-		clusterFunctions_.sweepParticleSectors();
+		clusterFunctions_.sweepParticleSectors(true);
 
 		clusterFunctions_.findGf(gfCluster);
 	}
@@ -231,7 +231,7 @@ private:
 					for (SizeType k=0;k<Nc;++k) { //cluster k-space
 						RealType tmp = krProduct(k,i,j);
 						dest(b,i+j*Nc+gamma*Nc*Nc)+=
-						ComplexType(cos(tmp),sin(tmp))*src(b + nBath,k+gamma*Nc);
+						ComplexType(cos(tmp),sin(tmp))*src(b,k+gamma*Nc);
 					}
 
 					dest(b,i+j*Nc+gamma*Nc*Nc)=std::real(dest(b,i+j*Nc+gamma*Nc*Nc))/Nc;
@@ -263,7 +263,7 @@ private:
 					for (SizeType k=0;k<Nc;k++) { // k is in the cluster (k-space)
 						RealType tmp = krProduct(k,j,s);
 						vbar[j+s*Nc+ii]+=
-						ComplexType(cos(tmp),sin(tmp))*src(i,k+gamma*Nc);
+						ComplexType(cos(tmp),sin(tmp))*src(i + nBath,k+gamma*Nc);
 					}
 
 					vbar[j+s*Nc+ii] /= Nc;
@@ -299,6 +299,8 @@ private:
 
 	void inversionSymmetry(MatrixType& p,int start, int end)
 	{
+		if (params_.largeKs == 1) return;
+
 		int nBath = end - start;
 		MatrixType tempMatrix(nBath,p.n_col());
 
