@@ -22,6 +22,7 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #include "Matrix.h"
 #include "DcaLoopGlobals.h"
 #include "ParticleSectors.h"
+#include "Indexing.h"
 
 namespace OpenDca {
 
@@ -49,7 +50,8 @@ template<typename ParametersType_,typename GeometryType,typename InputNgType_>
 class DcaToDiag {
 
 	typedef typename ParametersType_::RealType RealType_;
-	typedef typename PsimagLite::Vector<RealType_>::Type VectorRealType;
+	typedef Indexing<ParametersType_,GeometryType> IndexingType;
+	typedef typename IndexingType::VectorRealType VectorRealType;
 	typedef typename PsimagLite::Vector<SizeType>::Type VectorSizeType;
 	typedef std::complex<RealType_> ComplexType;
 	typedef typename PsimagLite::Vector<ComplexType>::Type VectorType;
@@ -57,6 +59,7 @@ class DcaToDiag {
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef HubbardParams<RealType_> HubbardParamsType;
 	typedef ParticleSectors<ParametersType_,InputNgType_> ParticleSectorsType;
+	typedef typename IndexingType::PairIntIntType PairIntIntType;
 
 public:
 
@@ -85,7 +88,8 @@ public:
 	   io_(io),
 	   lastTermSeen_(0),
 	   connectorsCounter_(0),
-	   particleSectors_(params,io)
+	   particleSectors_(params,io),
+	   indexing_(params,geometry)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		SizeType total=params_.largeKs*(1+nBath)*params_.orbitals;
@@ -120,14 +124,14 @@ public:
 						hubbardParams_.potentialV[ind] =
 						  hubbardParams_.potentialV[ind + total] = originalV_[ind] - mu;
 				} else if (i<clusterSize && j>=clusterSize) { // we're inter cluster
-					getBathPoint(r,alpha,j,clusterSize,nBathOrbitals);
+					indexing_.getBathPoint(r,alpha,j,clusterSize,nBathOrbitals);
 					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,i);
 				} else if (i>=clusterSize && j<clusterSize) { // we're inter cluster
-					getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
+					indexing_.getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
 					hubbardParams_.hoppings(ind,jnd)=tBathClusterCorrected(alpha,r,j);
 				} else if (i>=clusterSize && j>=clusterSize) { //we're in the bath
-					getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
-					getBathPoint(r2,alpha2,j,clusterSize,nBathOrbitals);
+					indexing_.getBathPoint(r,alpha,i,clusterSize,nBathOrbitals);
+					indexing_.getBathPoint(r2,alpha2,j,clusterSize,nBathOrbitals);
 
 					if (alpha==alpha2 && r!=r2) {
 						hubbardParams_.hoppings(ind,jnd) = 0.0;
@@ -283,36 +287,7 @@ public:
 
 	SizeType dcaIndexToDmrgIndex(SizeType i) const
 	{
-		if (params_.largeKs == 1) {
-			SizeType orb = i % params_.orbitals;
-			SizeType site = static_cast<SizeType>(i/params_.orbitals);
-			return site + orb*geometry_.numberOfSites();
-		} else {
-			if (params_.orbitals > 1) {
-				PsimagLite::String str("Nc>1 and orbitals>1 not supported\n");
-				throw PsimagLite::RuntimeError(str);
-			}
-		}
-
-		SizeType Nc = params_.largeKs;
-		SizeType NcOver2 = static_cast<SizeType>(Nc/2);
-		SizeType NcLy = 2;
-		SizeType nBath = params_.nofPointsInBathPerClusterPoint;
-		SizeType r = 0;
-
-		if (i < Nc) {
-			r = clusterIndexDcaToDiag(i,NcLy);
-			return r + NcOver2*nBath;
-		}
-
-		SizeType alpha = 0;
-		getBathPoint(r,alpha,i,Nc,nBath);
-		SizeType r2 = clusterIndexDcaToDiag(r,NcLy);
-
-		if (r2 < NcOver2)
-			return r2 + alpha*nBath;
-
-		return r2 -NcOver2 + alpha*nBath + Nc + NcOver2*nBath;
+		return indexing_.dcaToDmrg(i);
 	}
 
 	SizeType particleSectors() const { return particleSectors_.sectors(); }
@@ -328,16 +303,9 @@ private:
 
 	RealType tBathClusterCorrected(SizeType alpha, SizeType r, SizeType ind) const
 	{
-		SizeType bathOrbital = alpha % params_.orbitals;
-		SizeType clusterOrbital = ind %  params_.orbitals;
-		if (bathOrbital != clusterOrbital) return 0.0;
-
-		SizeType csno = static_cast<SizeType>(ind/params_.orbitals);
-		SizeType bathSite = static_cast<SizeType>(alpha/params_.orbitals);
-		SizeType largeKs2 = params_.largeKs * params_.largeKs;
-		assert(csno < params_.largeKs);
-		SizeType index = csno + csno*params_.largeKs + clusterOrbital*largeKs2;
-		return std::real(tBathCluster_(bathSite,index));
+		PairIntIntType p = indexing_.bathCluster(alpha,r,ind);
+		if (p.first < 0 || p.second < 0) return 0.0;
+		return std::real(tBathCluster_(p.first,p.second));
 	}
 
 	RealType lambdaCorrected(const VectorType& lambda,
@@ -345,54 +313,9 @@ private:
 	                         SizeType jnd,
 	                         SizeType alpha) const
 	{
-		SizeType csno1 = static_cast<SizeType>(ind/params_.orbitals);
-		SizeType csno2 = static_cast<SizeType>(jnd/params_.orbitals);
-		SizeType largeKs2 = params_.largeKs * params_.largeKs;
-		SizeType nBath = static_cast<SizeType>(lambda.size()/params_.orbitals);
-		SizeType alphaCorrected = orbitalBathToBathOrbital(alpha, nBath);
-		SizeType index = csno1 + csno2*params_.largeKs + alphaCorrected* largeKs2;
+		SizeType index = indexing_.lambda(ind,jnd,alpha,lambda.size());
 		assert(index < lambda.size());
 		return std::real(lambda[index]);
-	}
-
-	SizeType clusterIndexDcaToDiag(SizeType ind,SizeType ly) const
-	{
-		SizeType dim = geometry_.dimension();
-		VectorRealType rvector(dim);
-		geometry_.index2Rvector(ind,rvector);
-		SizeType x = static_cast<SizeType>(rvector[0]);
-		if (dim == 1)
-			return x;
-
-		assert(dim == 2);
-		return static_cast<SizeType>(rvector[1]) + x*ly;
-
-	}
-
-	// Formula is i=clusterSize + Nb*r + alpha, given Nc, Nb and i determines alpha and r
-	void getBathPoint(SizeType& r,
-	                  SizeType& alpha,
-	                  SizeType i,
-	                  SizeType clusterSize,
-	                  SizeType nBath) const
-	{
-		assert(i >= clusterSize);
-		i-=clusterSize;
-		r = static_cast<SizeType>(i/nBath);
-		alpha = i-r*nBath;
-	}
-
-	bool isInBath(SizeType ind) const
-	{
-		bool b = (ind != 4 && ind != 5);
-		b &= (ind != 6 && ind != 7);
-		return b;
-	}
-
-	SizeType orbitalBathToBathOrbital(SizeType alpha, SizeType nBath) const
-	{
-		div_t q = div(alpha,params_.orbitals);
-		return q.rem * nBath + q.quot;
 	}
 
 	void setHoppings(VectorRealType& v, const MatrixRealType& hoppings) const
@@ -437,9 +360,9 @@ private:
 			SizeType total = hoppings.n_row();
 			v.resize(params_.largeKs*nBath);
 			for (SizeType i = 0; i < total; ++i) {
-				if (!isInBath(i)) continue;
+				if (!indexing_.isInBath(i)) continue;
 				for (SizeType j = 0; j < total; ++j) {
-					if (!isInBath(j)) continue;
+					if (!indexing_.isInBath(j)) continue;
 					SizeType handle = geometry_.handle(lastTermSeen_,i,j);
 					assert(handle < v.size());
 					v[handle] = hoppings(i,j);
@@ -485,6 +408,7 @@ private:
 	SizeType connectorsCounter_;
 	VectorRealType originalV_;
 	ParticleSectorsType particleSectors_;
+	IndexingType indexing_;
 }; // class DcaToDiag
 
 }
