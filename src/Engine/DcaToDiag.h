@@ -21,6 +21,7 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #include "String.h"
 #include "Matrix.h"
 #include "DcaLoopGlobals.h"
+#include "ParticleSectors.h"
 
 namespace OpenDca {
 
@@ -55,6 +56,7 @@ class DcaToDiag {
 	typedef PsimagLite::Matrix<RealType_> MatrixRealType;
 	typedef PsimagLite::Matrix<ComplexType> MatrixType;
 	typedef HubbardParams<RealType_> HubbardParamsType;
+	typedef ParticleSectors<ParametersType_,InputNgType_> ParticleSectorsType;
 
 public:
 
@@ -83,21 +85,8 @@ public:
 	   io_(io),
 	   lastTermSeen_(0),
 	   connectorsCounter_(0),
-	   electronsUp_(0),
-	   electronsDown_(0)
+	   particleSectors_(params,io)
 	{
-		io_.readline(electronsUp_,"TargetElectronsUp=");
-		io_.readline(electronsDown_,"TargetElectronsDown=");
-
-		SizeType totalSites = params_.largeKs*(1+ params_.nofPointsInBathPerClusterPoint);
-		SizeType onp1 = 2*params_.orbitals * totalSites + 1;
-		muFeatureOffset_.resize(onp1);
-		SizeType sum = 0;
-		for (SizeType i = 0; i < onp1; ++i) {
-			sum += (i+1);
-			muFeatureOffset_[i] = sum;
-		}
-
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		SizeType total=params_.largeKs*(1+nBath)*params_.orbitals;
 
@@ -218,9 +207,9 @@ public:
 		           label == "DynamicDmrgSteps=") {
 			io_.readline(x,label);
 		} else if (label == "TargetElectronsUp=") {
-			x = electronsUp_;
+			x = electrons(SPIN_UP);
 		} else if (label == "TargetElectronsDown=") {
-			x = electronsDown_;
+			x = electrons(SPIN_DOWN);
 		} else if (label == "BathSitesPerSite=") {
 			x = params_.nofPointsInBathPerClusterPoint;
 		} else {
@@ -326,49 +315,16 @@ public:
 		return r2 -NcOver2 + alpha*nBath + Nc + NcOver2*nBath;
 	}
 
-	SizeType muFeatureSize() const
-	{
-		if (params_.dcaOptions.find("nomufeature") != PsimagLite::String::npos)
-			return 0;
+	SizeType particleSectors() const { return particleSectors_.sectors(); }
 
-		SizeType onp1 = muFeatureOffset_.size();
-		SizeType onp2 = onp1 + 1;
-		return static_cast<SizeType>(onp1*onp2*0.5);
-	}
-
-	void muFeatureSet(SizeType ind)
-	{
-		SizeType onp1 = muFeatureOffset_.size();
-		for (SizeType i = 0; i < onp1; ++i) {
-			if (ind < muFeatureOffset_[i]) return muFeatureSet(ind,i);
-		}
-	}
+	void particleSectorsSet(SizeType ind) { particleSectors_.set(ind); }
 
 	SizeType electrons(SpinEnum spin) const
 	{
-		return (spin == SPIN_UP) ? electronsUp_ : electronsDown_;
+		return particleSectors_.electrons(spin);
 	}
 
 private:
-
-	void muFeatureSet(SizeType ind, SizeType o)
-	{
-		SizeType ind2 = (o == 0) ? 0 : ind - muFeatureOffset_[o-1];
-		assert(o == 0 || ind >= muFeatureOffset_[o-1]);
-		SizeType total = o;
-		electronsUp_ = ind2;
-		electronsDown_ = total - ind2;
-		SizeType onp1 = muFeatureOffset_.size();
-		assert(onp1 > 0);
-		onp1--;
-		assert(!(onp1 & 1));
-		onp1 = static_cast<SizeType>(onp1*0.5);
-		if (electronsUp_ > onp1 ||
-		    electronsDown_ > onp1 ||
-		    electronsDown_ > electronsUp_) {
-			electronsUp_ = electronsDown_ = 0;
-		}
-	}
 
 	RealType tBathClusterCorrected(SizeType alpha, SizeType r, SizeType ind) const
 	{
@@ -527,10 +483,8 @@ private:
 	typename InputNgType::Readable io_;
 	SizeType lastTermSeen_;
 	SizeType connectorsCounter_;
-	SizeType electronsUp_;
-	SizeType electronsDown_;
 	VectorRealType originalV_;
-	VectorSizeType muFeatureOffset_;
+	ParticleSectorsType particleSectors_;
 }; // class DcaToDiag
 
 }

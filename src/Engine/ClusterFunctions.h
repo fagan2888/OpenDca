@@ -126,8 +126,8 @@ public:
 		RealType Eg = 1e6;
 		SizeType iMin = 0;
 		RealType densityGs = 0;
-		for (SizeType i = 0; i < myInput.muFeatureSize(); ++i) {
-			myInput.muFeatureSet(i);
+		for (SizeType i = 0; i < myInput.particleSectors(); ++i) {
+			myInput.particleSectorsSet(i);
 			SizeType total = myInput.electrons(SPIN_UP) + myInput.electrons(SPIN_DOWN);
 			if (total == 0) continue;
 			std::cout<<"Trying with "<<myInput.electrons(SPIN_UP);
@@ -144,8 +144,8 @@ public:
 			densityGs = density;
 		}
 
-		if (myInput.muFeatureSize() > 0) {
-			myInput.muFeatureSet(iMin);
+		if (myInput.particleSectors() > 0) {
+			myInput.particleSectorsSet(iMin);
 			std::cout<<"EffectiveHamiltonian: found lowest energy "<<Eg;
 			if (last) std::cout<<" BEFORE GF ";
 			std::cout<<" in mu sector "<<iMin;
