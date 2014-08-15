@@ -40,6 +40,8 @@ public:
 	  barEpsilon_(params_.largeKs*params_.orbitals*params_.orbitals)
 	{
 		coarseDispersion(barEpsilon_);
+		std::cout<<"barEpsilon\n";
+		std::cout<<barEpsilon_;
 	}
 
 	RealType operator()(SizeType coarseIndex,

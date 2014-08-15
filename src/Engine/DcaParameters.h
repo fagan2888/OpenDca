@@ -47,13 +47,13 @@ struct DcaParameters {
 	  - DcaRealFreqIterations=integer Number of self-consistent iterations done
 		with real freq.
 	  - DcaOptions=string Either none or nomufeature
-	  - DcaG0Mix=real Mixing between current G0 and previous DCA iteration G0
 	  - AndersonFitCutoff=real Maximum Matsubara freq. in absolute value to be
 								  considered for the Anderson fitting.
-	  - AndersonFitMaxIter=integer Maximum iterations for the Anderson fitting. [Optional]
-	  - AndersonFitDelta=real Delta for the Anderson fitting. [Optional]
-	  - AndersonFitMaxGradient=real Max Gradient for the Anderson fitting. [Optional]
-	  - Threads=integer [Optional]
+	  - DcaG0Mix=real [0.0] Mixing between current G0 and previous DCA iteration G0
+	  - AndersonFitMaxIter=integer [1e4] Maximum iterations for the Anderson fitting.
+	  - AndersonFitDelta=real [1e-4] Delta for the Anderson fitting.
+	  - AndersonFitMaxGradient=real [1e-3] Max Gradient for the Anderson fitting.
+	  - Threads=integer [1]
 	*/
 	template<typename SomeInputType>
 	DcaParameters(SomeInputType& io)
@@ -77,7 +77,11 @@ struct DcaParameters {
 		io.readline(realIterations,"DcaRealFreqIterations=");
 		io.readline(dcaOptions,"DcaOptions=");
 		io.readline(andersonFitCutoff,"AndersonFitCutoff=");
-		io.readline(g0Mix,"DcaG0Mix=");
+
+		g0Mix = 0.0;
+		try {
+			io.readline(g0Mix,"DcaG0Mix=");
+		} catch (std::exception& e) {}
 
 		andersonFitMaxIter = 1e4;
 		try {

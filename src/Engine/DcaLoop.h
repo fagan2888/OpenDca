@@ -81,9 +81,6 @@ public:
 	{
 		SizeType largeKs = params_.largeKs;
 		SizeType norb = params_.orbitals;
-		const VectorRealType& barEpsilon = dispersion_.coarse();
-		std::cout<<"barEpsilon\n";
-		std::cout<<barEpsilon;
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
 		bool adjustMuLattice = (!adjustments_.isOption("adjustmucluster") &
 		                        !adjustments_.isOption("noadjustmu"));
@@ -101,14 +98,14 @@ public:
 			latticeFunctions_.makeGf(freqEnum, LatticeFunctionsType::PRINT_YES);
 			if (adjustMuLattice) adjustments_.adjChemPot();
 
-			diagUpdate(gfcluster,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+			diagUpdate(gfcluster,gammaOmegaRealOrImag,freqEnum);
 			std::cout<<"#gfcluster\n";
 			std::cout<<gfcluster;
 
 			// transform from real to k space
 			ft4(gfclusterK,gfcluster,fTCoefsR2K_,params_.largeKs);
 
-			makeG0(G0,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+			makeG0(G0,gammaOmegaRealOrImag,freqEnum);
 
 			if (i > 0) G0 = (1.0 - params_.g0Mix)*G0 + params_.g0Mix * G0prev;
 
@@ -128,7 +125,6 @@ private:
 
 	void diagUpdate(MatrixType& gfCluster,
 	                MatrixType& gammaOmegaRealOrImag,
-	                const VectorRealType& ekbar,
 	                PsimagLite::FreqEnum freqEnum)
 	{
 		const MatrixType& gckfsc = latticeFunctions_.gf();
@@ -137,12 +133,12 @@ private:
 		EffectiveHamiltonianType effectiveHamiltonian(params_,geometry_,io_);
 
 		std::cerr<<"gamma omega...\n";
-		getDeltaOmega(deltaOmega,ekbar,freqEnum);
+		getDeltaOmega(deltaOmega,freqEnum);
 
 		MatrixType gammaOmega(params_.numberOfMatsubaras,gckfsc.n_col());
 		getGammaOmega(gammaOmega,deltaOmega,freqEnum);
 		std::cerr<<"make h params...\n";
-		effectiveHamiltonian.build(gammaOmega,ekbar,freqEnum);
+		effectiveHamiltonian.build(gammaOmega,dispersion_.coarse(),freqEnum);
 		std::cout<<effectiveHamiltonian;
 
 		//throw PsimagLite::RuntimeError("testing\n");
@@ -177,9 +173,9 @@ private:
 
 	//! Delta_k(omega) = omega + ekbar(k) -sigma(omega,k) - 1.0/gckfsc_(omega,k)
 	void getDeltaOmega(MatrixType& deltaOmega,
-	                   const VectorRealType& ekbar,
 	                   PsimagLite::FreqEnum freqEnum)
 	{
+		const VectorRealType& ekbar = dispersion_.coarse();
 		SizeType norb = params_.orbitals;
 		SizeType largeKs = params_.largeKs;
 		const MatrixType& gckfsc = latticeFunctions_.gf();
@@ -253,11 +249,11 @@ private:
 
 	void makeG0(MatrixType& G0,
 	            const MatrixType& gammakomega,
-	            const VectorRealType& epsbar,
 	            PsimagLite::FreqEnum freqEnum)
 	{
 		assert(freqEnum == PsimagLite::FREQ_MATSUBARA);
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
+		const VectorRealType& epsbar = dispersion_.coarse();
 
 		std::cout<<"#G0\n";
 		for (SizeType i = 0;i < gammakomega.n_row(); ++i) {
