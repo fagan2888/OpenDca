@@ -21,7 +21,7 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #include "Vector.h"
 #include "NoPthreads.h"
 #include "Parallelizer.h"
-#include "DcaToDmrg.h"
+#include "DcaToDiag.h"
 #include "InputNg.h"
 #include "AndersonFit.h"
 #include "FreqEnum.h"
@@ -42,8 +42,8 @@ class EffectiveHamiltonian {
 	typedef Dmrg::BasisWithOperators<OperatorsType> BasisWithOperatorsType;
 	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
 	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
-	typedef DcaToDmrg<ParametersType,GeometryType,InputNgType> DcaToDmrgType_;
-	typedef ClusterFunctions<DcaToDmrgType_> ClusterFunctionsType;
+	typedef DcaToDiag<ParametersType,GeometryType,InputNgType> DcaToDiagType_;
+	typedef ClusterFunctions<DcaToDiagType_> ClusterFunctionsType;
 	typedef typename ClusterFunctionsType::MatrixType MatrixType;
 	typedef PsimagLite::Matrix<RealType> MatrixRealType;
 	typedef typename PsimagLite::Vector<RealType>::Type VectorRealType;
@@ -53,7 +53,7 @@ class EffectiveHamiltonian {
 
 public:
 
-	typedef DcaToDmrgType_ DcaToDmrgType;
+	typedef DcaToDiagType_ DcaToDiagType;
 
 	EffectiveHamiltonian(const ParametersType& params,
 	                                 const GeometryType& geometry,
@@ -165,7 +165,7 @@ private:
 		}
 	}
 
-	DcaToDmrgType* makeHubbardParams(const VectorRealType& ekbar,
+	DcaToDiagType* makeHubbardParams(const VectorRealType& ekbar,
 	                                 typename InputNgType::Readable& io)
 	{
 		SizeType Nc=params_.largeKs;
@@ -184,7 +184,7 @@ private:
 		std::cout<<"tBathCluster\n";
 		std::cout<<tBathCluster;
 
-		return new DcaToDmrgType(params_,tCluster,tBathCluster,vbar,geometry_,io);
+		return new DcaToDiagType(params_,tCluster,tBathCluster,vbar,geometry_,io);
 	}
 
 	void ft(MatrixType& dest,const VectorRealType& src) const
@@ -346,7 +346,7 @@ private:
 	typename InputNgType::Readable& io_;
 	MatrixType p_;
 	MatrixType gammaRealFreq_;
-	DcaToDmrgType* garbage_;
+	DcaToDiagType* garbage_;
 	ClusterFunctionsType clusterFunctions_;
 	AdjustmentsType adjustments_;
 };

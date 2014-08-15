@@ -42,7 +42,7 @@ class DcaLoop {
 	typedef EffectiveHamiltonian<ParametersType,
 	                             GeometryType,
 	                             InputNgType> EffectiveHamiltonianType;
-	typedef typename EffectiveHamiltonianType::DcaToDmrgType DcaToDmrgType;
+	typedef typename EffectiveHamiltonianType::DcaToDiagType DcaToDiagType;
 	typedef LatticeFunctions<MatrixType,
 	                        VectorType,
 	                        DispersionType> LatticeFunctionsType;

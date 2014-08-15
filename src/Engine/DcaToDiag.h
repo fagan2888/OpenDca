@@ -15,8 +15,8 @@ GNU General Public License for more details.
 You should have received a copy of the GNU General Public License
 along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 */
-#ifndef DCA_TO_DMRG_H
-#define DCA_TO_DMRG_H
+#ifndef DCA_TO_DIAG_H
+#define DCA_TO_DIAG_H
 #include "Vector.h"
 #include "String.h"
 #include "Matrix.h"
@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os,const HubbardParams<RealType>& hp)
 }
 
 template<typename ParametersType_,typename GeometryType,typename InputNgType_>
-class DcaToDmrg {
+class DcaToDiag {
 
 	typedef typename ParametersType_::RealType RealType_;
 	typedef typename PsimagLite::Vector<RealType_>::Type VectorRealType;
@@ -70,7 +70,7 @@ public:
 		return 0;
 	}
 
-	DcaToDmrg(const ParametersType& params,
+	DcaToDiag(const ParametersType& params,
 	          const MatrixType& tCluster,
 	          const MatrixType& tBathCluster,
 	          const VectorType& lambda,
@@ -312,13 +312,13 @@ public:
 		SizeType r = 0;
 
 		if (i < Nc) {
-			r = clusterIndexDcaToDmrg(i,NcLy);
+			r = clusterIndexDcaToDiag(i,NcLy);
 			return r + NcOver2*nBath;
 		}
 
 		SizeType alpha = 0;
 		getBathPoint(r,alpha,i,Nc,nBath);
-		SizeType r2 = clusterIndexDcaToDmrg(r,NcLy);
+		SizeType r2 = clusterIndexDcaToDiag(r,NcLy);
 
 		if (r2 < NcOver2)
 			return r2 + alpha*nBath;
@@ -399,7 +399,7 @@ private:
 		return std::real(lambda[index]);
 	}
 
-	SizeType clusterIndexDcaToDmrg(SizeType ind,SizeType ly) const
+	SizeType clusterIndexDcaToDiag(SizeType ind,SizeType ly) const
 	{
 		SizeType dim = geometry_.dimension();
 		VectorRealType rvector(dim);
@@ -531,7 +531,7 @@ private:
 	SizeType electronsDown_;
 	VectorRealType originalV_;
 	VectorSizeType muFeatureOffset_;
-}; // class DcaToDmrg
+}; // class DcaToDiag
 
 }
 
