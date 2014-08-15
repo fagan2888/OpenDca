@@ -47,6 +47,7 @@ struct DcaParameters {
 	  - DcaRealFreqIterations=integer Number of self-consistent iterations done
 		with real freq.
 	  - DcaOptions=string Either none or nomufeature
+	  - DcaG0Mix=real Mixing between current G0 and previous DCA iteration G0
 	  - AndersonFitCutoff=real Maximum Matsubara freq. in absolute value to be
 								  considered for the Anderson fitting.
 	  - AndersonFitMaxIter=integer Maximum iterations for the Anderson fitting. [Optional]
@@ -76,6 +77,7 @@ struct DcaParameters {
 		io.readline(realIterations,"DcaRealFreqIterations=");
 		io.readline(dcaOptions,"DcaOptions=");
 		io.readline(andersonFitCutoff,"AndersonFitCutoff=");
+		io.readline(g0Mix,"DcaG0Mix=");
 
 		andersonFitMaxIter = 1e4;
 		try {
@@ -137,6 +139,7 @@ struct DcaParameters {
 	mutable RealType mu;
 	RealType targetDensity;
 	RealType delta;
+	RealType g0Mix;
 	PsimagLite::String dcaSolver;
 	PsimagLite::String dcaOptions;
 	typename PsimagLite::Vector<RealType>::Type potentialV;

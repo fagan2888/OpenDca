@@ -81,8 +81,7 @@ public:
 	{
 		SizeType largeKs = params_.largeKs;
 		SizeType norb = params_.orbitals;
-		VectorRealType barEpsilon(largeKs*norb*norb);
-		coarseDispersion(barEpsilon);
+		const VectorRealType& barEpsilon = dispersion_.coarse();
 		std::cout<<"barEpsilon\n";
 		std::cout<<barEpsilon;
 		bool lanczosReal = adjustments_.isOption("lanczosreal");
@@ -92,7 +91,8 @@ public:
 		                                            params_.numberOfMatsubaras;
 		MatrixType gfcluster(omegasRealOrImag,largeKs*largeKs*params_.orbitals);
 		MatrixType gammaOmegaRealOrImag(latticeFunctions_.omegaSize(freqEnum),largeKs*norb);
-		MatrixType G0inverse(omegasRealOrImag,largeKs*norb);
+		MatrixType G0(omegasRealOrImag,largeKs*norb);
+		MatrixType G0prev(omegasRealOrImag,largeKs*norb);
 		MatrixType gfclusterK(omegasRealOrImag,params_.largeKs*params_.orbitals);
 		RealType sigmaNorm = 0;
 		latticeFunctions_.setFreqType(freqEnum);
@@ -108,10 +108,14 @@ public:
 			// transform from real to k space
 			ft4(gfclusterK,gfcluster,fTCoefsR2K_,params_.largeKs);
 
-			makeG0(G0inverse,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+			makeG0(G0,gammaOmegaRealOrImag,barEpsilon,freqEnum);
+
+			if (i > 0) G0 = (1.0 - params_.g0Mix)*G0 + params_.g0Mix * G0prev;
+
+			G0prev = G0;
 
 			RealType dcaError = sigmaNorm;
-			sigmaNorm = latticeFunctions_.makeSigma(gfclusterK,G0inverse,freqEnum);
+			sigmaNorm = latticeFunctions_.makeSigma(gfclusterK,G0,freqEnum);
 			dcaError -= sigmaNorm;
 
 			std::cout<<"sigma\n";
@@ -169,26 +173,6 @@ private:
 		const MatrixType& p = effectiveHamiltonian.andersonParameters();
 
 		getGammaKOmega(gammaOmegaRealOrImag,p,freqEnum);
-	}
-
-	void coarseDispersion(VectorRealType& barEpsilon)
-	{
-		SizeType meshPoints = geometry_.sizeOfMesh();
-		SizeType largeKs = params_.largeKs;
-		SizeType norb = params_.orbitals;
-		assert(barEpsilon.size() == largeKs*norb*norb);
-
-		for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
-			for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
-				for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
-					SizeType index = bigK + gamma1*largeKs + gamma2*largeKs*norb;
-					barEpsilon[index] = 0.0;
-					for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde)
-						barEpsilon[index] += dispersion_(bigK,gamma1,gamma2,ktilde);
-					barEpsilon[index] /= meshPoints;
-				}
-			}
-		}
 	}
 
 	//! Delta_k(omega) = omega + ekbar(k) -sigma(omega,k) - 1.0/gckfsc_(omega,k)
@@ -267,7 +251,7 @@ private:
 		}
 	}
 
-	void makeG0(MatrixType& G0inverse,
+	void makeG0(MatrixType& G0,
 	            const MatrixType& gammakomega,
 	            const VectorRealType& epsbar,
 	            PsimagLite::FreqEnum freqEnum)
@@ -287,9 +271,8 @@ private:
 				SizeType orb2 = tmp % params_.orbitals;
 				if (orb1 != orb2) continue;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
-				G0inverse(i,jj) = omega + params_.mu -epsbar[j] - gammakomega(i,jj);
-				ComplexType tmp2 = 1.0/G0inverse(i,jj);
-				std::cout<<tmp2<<" ";
+				G0(i,jj) = 1.0/(omega + params_.mu -epsbar[j] - gammakomega(i,jj));
+				std::cout<<G0(i,jj)<<" ";
 			}
 
 			std::cout<<"\n";

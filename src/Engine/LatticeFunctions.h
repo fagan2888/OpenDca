@@ -51,7 +51,8 @@ public:
 		makeGf(freqEnum_,PRINT_YES);
 	}
 
-	// G(\tau=0) = T \sum_n G_interacting (iwn)
+	// G(\tau=0) = T \sum_n G_interacting (iwn,orbital1, orbital2, site)
+	// DIAGONAL IN SITE AND DIAGONAL IN ORBITAL
 	RealType operator()(RealType mu) const
 	{
 		params_.mu = mu;
@@ -60,7 +61,7 @@ public:
 		ComplexType sum = 0;
 		for (SizeType i = 0; i < gf_.n_row(); ++i) {
 			for (SizeType j = 0; j < gf_.n_col(); ++j) { // FIXME
-				sum += gf_(i,j) - correction(i,j);
+				sum += gf_(i,j) + correction(i,j);
 			}
 		}
 
@@ -82,7 +83,7 @@ public:
 				SizeType orb2 = tmp % params_.orbitals;
 				if (orb1 != orb2) continue;
 				SizeType jj = clusterK + orb1 * params_.largeKs;
-				sigma_(i,j) = nonInteracting(i,jj) - 1.0/interacting(i,jj);
+				sigma_(i,j) = 1.0/nonInteracting(i,jj) - 1.0/interacting(i,jj);
 			}
 		}
 
@@ -196,14 +197,24 @@ private:
 		return tmp/params_.largeKs;
 	}
 
+
+	// FIXME: Correct for orbitals
 	RealType correction(SizeType i, SizeType j) const
 	{
-		return 0.0;
+		RealType num = params_.potentialV[0] - params_.mu + sigmaHartree(j);
+		RealType wn = matsubara(i);
+		return num/(wn*wn);
+	}
+
+	// No freq. dependency here
+	RealType sigmaHartree(SizeType j) const
+	{
+		return 0.0; // FIXME
 	}
 
 	RealType integratedCorrection() const
 	{
-		return 0.0;
+		return 0.0; // FIXME
 	}
 
 	PsimagLite::FreqEnum freqEnum_;

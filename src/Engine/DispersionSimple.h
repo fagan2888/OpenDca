@@ -35,8 +35,12 @@ public:
 	typedef DcaParameters<RealType> ParametersType;
 
 	DispersionSimple(const ParametersType& params, const GeometryType& geometry)
-	: params_(params),geometry_(geometry)
-	{}
+	: params_(params),
+	  geometry_(geometry),
+	  barEpsilon_(params_.largeKs*params_.orbitals*params_.orbitals)
+	{
+		coarseDispersion(barEpsilon_);
+	}
 
 	RealType operator()(SizeType coarseIndex,
 	                    SizeType gamma1,
@@ -57,6 +61,8 @@ public:
 		return getDispersion(kvector)
 		       + onSitePotential(coarseIndex,gamma1,gamma2);
 	}
+
+	const VectorRealType& coarse() const { return barEpsilon_; }
 
 private:
 
@@ -79,8 +85,29 @@ private:
 		return params_.potentialV[index];
 	}
 
+	void coarseDispersion(VectorRealType& barEpsilon)
+	{
+		SizeType meshPoints = geometry_.sizeOfMesh();
+		SizeType largeKs = params_.largeKs;
+		SizeType norb = params_.orbitals;
+		assert(barEpsilon.size() == largeKs*norb*norb);
+
+		for (SizeType bigK = 0; bigK < largeKs; ++bigK) {
+			for (SizeType gamma1 = 0; gamma1 < norb; ++gamma1) {
+				for (SizeType gamma2 = 0; gamma2 < norb; ++gamma2) {
+					SizeType index = bigK + gamma1*largeKs + gamma2*largeKs*norb;
+					barEpsilon[index] = 0.0;
+					for (SizeType ktilde = 0; ktilde < meshPoints; ++ktilde)
+						barEpsilon[index] += operator()(bigK,gamma1,gamma2,ktilde);
+					barEpsilon[index] /= meshPoints;
+				}
+			}
+		}
+	}
+
 	const ParametersType& params_;
 	const GeometryType& geometry_;
+	VectorRealType barEpsilon_;
 };
 
 } // namespace OpenDca
