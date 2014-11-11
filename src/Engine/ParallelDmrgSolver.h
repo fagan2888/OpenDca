@@ -178,7 +178,7 @@ public:
 			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
 			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
 			if (!freqDependent) omegaValue = 0;
-			tsp_.omega(omegaValue);
+			tsp_.omega(PsimagLite::FREQ_REAL,omegaValue);
 
 			SolverType dmrgSolver(model_,tsp_,myInput_);
 			dmrgSolver.main(geometry2_);
