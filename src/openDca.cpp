@@ -43,7 +43,6 @@ int main(int argc, char *argv[])
 	int opt = 0;
 	PsimagLite::String strUsage(argv[0]);
 	strUsage += " -f filename";
-	PsimagLite::String insitu("");
 	while ((opt = getopt(argc, argv,"f:")) != -1) {
 		switch (opt) {
 		case 'f':

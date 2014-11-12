@@ -99,9 +99,11 @@ public:
 
 	RealType density(SizeType total1, SizeType total2) const
 	{
-		PsimagLite::String msg("DcaSolverDmrg::");
-		msg += "density: unimplemented\n";
-		throw PsimagLite::RuntimeError(msg);
+		DcaToDmrgType myInput2 = myInput_;
+		MatrixType gf(0,0);
+		VectorRunType runs;
+		ParallelDmrgSolverType helperSolver(myInput2,geometry2_,gf,runs,0);
+		return helperSolver.density(total1, total2);
 	}
 
 private:

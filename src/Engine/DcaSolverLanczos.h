@@ -113,7 +113,7 @@ public:
 		return engine_.gsEnergy();
 	}
 
-	RealType density(SizeType total1, SizeType total2) const
+	RealType density(SizeType, SizeType total2) const
 	{
 		PsimagLite::Vector<PairType>::Type spins(1,PairType(0,0));
 		SizeType cicj = LanczosPlusPlus::ProgramGlobals::operator2id("c");

@@ -196,6 +196,19 @@ public:
 		return energy_;
 	}
 
+	RealType density(SizeType, SizeType total2)
+	{
+		GsParamsType tsp(myInput_,model_);
+		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
+		dmrgSolver.main(geometry2_);
+
+		typename TargetingGroundStateType::TargetVectorType::value_type sum = 0.0;
+		for (SizeType site = 0; site < total2; ++site)
+				sum += dmrgSolver.inSitu(site);
+
+		return std::real(sum);
+	}
+
 private:
 
 	void accumulateGf(const RunType& run,
