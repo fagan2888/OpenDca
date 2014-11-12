@@ -72,7 +72,7 @@ public:
 
 	RealType makeSigma(const MatrixType& interacting,
 	                   const MatrixType& nonInteracting,
-	                   PsimagLite::FreqEnum freqEnum)
+	                   PsimagLite::FreqEnum)
 	{
 		for (SizeType i = 0;i < sigma_.n_row(); ++i) {
 			for (SizeType j=0;j < sigma_.n_col(); ++j) {
@@ -155,7 +155,7 @@ public:
 		}
 	}
 
-	SizeType electrons(SpinEnum upOrDown) const
+	SizeType electrons(SpinEnum) const
 	{
 		throw PsimagLite::RuntimeError("LatticeFunctions has no integer electrons\n");
 	}
@@ -207,7 +207,7 @@ private:
 	}
 
 	// No freq. dependency here
-	RealType sigmaHartree(SizeType j) const
+	RealType sigmaHartree(SizeType) const
 	{
 		return 0.0; // FIXME
 	}

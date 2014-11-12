@@ -81,7 +81,7 @@ public:
 		return r2 -NcOver2 + alpha*nBath + Nc + NcOver2*nBath;
 	}
 
-	PairIntIntType bathCluster(SizeType alpha, SizeType r, SizeType ind) const
+	PairIntIntType bathCluster(SizeType alpha, SizeType, SizeType ind) const
 	{
 		SizeType bathOrbital = alpha % params_.orbitals;
 		SizeType clusterOrbital = ind %  params_.orbitals;

@@ -68,9 +68,9 @@ public:
 	typedef RealType_ RealType;
 
 	template<typename SomeMemResolvType>
-	SizeType memResolv(SomeMemResolvType& mres,
-	                   SizeType x,
-	                   PsimagLite::String msg = "") const
+	SizeType memResolv(SomeMemResolvType&,
+	                   SizeType,
+	                   PsimagLite::String = "") const
 	{
 		return 0;
 	}
@@ -251,7 +251,7 @@ public:
 
 	void readline(PsimagLite::String& x,
 	              PsimagLite::String label,
-	              bool clean = true)
+	              bool = true)
 	{
 		if (label == "GeometryKind=") {
 			x = geometry_.label(lastTermSeen_);
@@ -372,12 +372,12 @@ private:
 	}
 
 	template<typename T>
-	void setHoppingsDmft(T& m, const MatrixRealType& hoppings) const
+	void setHoppingsDmft(T&, const MatrixRealType&) const
 	{
 		throw PsimagLite::RuntimeError("setHoppingsDmft error\n");
 	}
 
-	void setHoppingsDmft(MatrixRealType& m, const MatrixRealType& hoppings) const
+	void setHoppingsDmft(MatrixRealType& m, const MatrixRealType&) const
 	{
 		assert(geometry_.label(0) == "star");
 		assert(params_.largeKs == 1);

@@ -76,7 +76,7 @@ public:
 	// Get LanczosParams from Gf
 	void build(MatrixType& gf,
 	           const VectorRealType& ekbar,
-	           PsimagLite::FreqEnum freqEnum)
+	           PsimagLite::FreqEnum)
 	{
 		SizeType nBath=params_.nofPointsInBathPerClusterPoint;
 		SizeType largeKs = params_.largeKs;
@@ -353,7 +353,7 @@ private:
 
 template<typename RealType, typename GeometryType,typename InputNgType>
 std::ostream& operator<<(std::ostream& os,
-                         EffectiveHamiltonian<RealType,GeometryType,InputNgType>& params)
+                         EffectiveHamiltonian<RealType,GeometryType,InputNgType>&)
 {
 	os<<"EffectiveHamiltonian\n";
 	return os;

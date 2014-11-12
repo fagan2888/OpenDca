@@ -58,7 +58,7 @@ public:
 
 	DcaSolverLanczos(DcaToDmrgType& myInput,
 	                 const VaryingGeometryType& geometry2,
-	                 typename InputNgType::Readable& io)
+	                 typename InputNgType::Readable&)
 	 : myInput_(myInput),
 	   modelSelector_(myInput,geometry2),
 	   model_(modelSelector_()),
