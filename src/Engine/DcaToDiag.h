@@ -39,10 +39,10 @@ struct HubbardParams {
 template<typename RealType>
 std::ostream& operator<<(std::ostream& os,const HubbardParams<RealType>& hp)
 {
-	std::cout<<"hoppings\n";
-	std::cout<<hp.hoppings;
-	std::cout<<"potentialV\n";
-	std::cout<<hp.potentialV;
+	os<<"hoppings\n";
+	os<<hp.hoppings;
+	os<<"potentialV\n";
+	os<<hp.potentialV;
 	return os;
 }
 
