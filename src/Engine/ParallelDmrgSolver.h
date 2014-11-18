@@ -45,7 +45,7 @@ struct Run {
 	enum EnumType {TYPE_NORMAL, TYPE_DAGGER};
 
 	Run(SizeType site1, SizeType orbital1, SizeType index1, EnumType type1)
-	: site(site1),orbital(orbital1),omegaIndex(index1),dynamicDmrgType(type1)
+	    : site(site1),orbital(orbital1),omegaIndex(index1),dynamicDmrgType(type1)
 	{}
 
 	SizeType site;
@@ -63,7 +63,7 @@ class ParallelDmrgSolver {
 	typedef typename DcaToDmrgType::InputNgType InputNgType;
 	typedef typename DcaToDmrgType::RealType RealType;
 	typedef Dmrg::ParametersDmrgSolver<RealType,
-	                                   DcaToDmrgType> ParametersDmrgSolverType;
+	DcaToDmrgType> ParametersDmrgSolverType;
 	typedef std::complex<RealType> ComplexType;
 	typedef PsimagLite::CrsMatrix<ComplexType> SparseMatrixType;
 	typedef Dmrg::Basis<SparseMatrixType> BasisType;
@@ -75,19 +75,19 @@ class ParallelDmrgSolver {
 	typedef Dmrg::LeftRightSuper<BasisWithOperatorsType,BasisType> LeftRightSuperType;
 	typedef Dmrg::ModelHelperLocal<LeftRightSuperType> ModelHelperType;
 	typedef Dmrg::ModelBase<ModelHelperType,
-	                                  ParametersDmrgSolverType,
-	                                  DcaToDmrgType,
-	                                  VaryingGeometryType> ModelBaseType;
+	ParametersDmrgSolverType,
+	DcaToDmrgType,
+	VaryingGeometryType> ModelBaseType;
 	typedef Dmrg::MatrixVectorOnTheFly<ModelBaseType> MatrixVectorType;
 	typedef Dmrg::VectorWithOffsets<ComplexType> VectorWithOffsetType;
 	typedef Dmrg::WaveFunctionTransfFactory<LeftRightSuperType,
-	                                        VectorWithOffsetType> WaveFunctionTransfType;
+	VectorWithOffsetType> WaveFunctionTransfType;
 	typedef Dmrg::TargetingCorrectionVector<PsimagLite::LanczosSolver,
-	                                        MatrixVectorType,
-	                                        WaveFunctionTransfType> TargetingType;
+	MatrixVectorType,
+	WaveFunctionTransfType> TargetingType;
 	typedef Dmrg::TargetingGroundState<PsimagLite::LanczosSolver,
-	                                   MatrixVectorType,
-	                                   WaveFunctionTransfType> TargetingGroundStateType;
+	MatrixVectorType,
+	WaveFunctionTransfType> TargetingGroundStateType;
 	typedef typename TargetingType::MatrixVectorType::ModelType ModelType;
 	typedef typename TargetingType::TargettingParamsType TargettingParamsType;
 	typedef typename TargetingGroundStateType::TargettingParamsType GsParamsType;
@@ -96,6 +96,38 @@ class ParallelDmrgSolver {
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
 	typedef PsimagLite::TridiagonalMatrix<RealType> TridiagonalMatrixType;
 	typedef PsimagLite::ContinuedFraction<TridiagonalMatrixType> ContinuedFractionType;
+
+	class OutputRedirect {
+
+	public:
+
+		OutputRedirect(std::ostream& redirectTo) :
+		    bOut(std::cout.rdbuf(redirectTo.rdbuf())),
+		    bErr(std::cerr.rdbuf(redirectTo.rdbuf())),
+		    running_(true)
+		{ }
+
+		void stop()
+		{
+			std::cout.rdbuf(bOut);
+			std::cerr.rdbuf(bErr);
+			running_ = false;
+		}
+
+		~OutputRedirect()
+		{
+			if (running_) stop();
+		}
+
+	private:
+
+		OutputRedirect(const OutputRedirect&);
+		OutputRedirect& operator=(const OutputRedirect&);
+
+		std::streambuf* bOut;
+		std::streambuf* bErr;
+		bool running_;
+	};
 
 public:
 
@@ -109,24 +141,31 @@ public:
 	                   MatrixType& gf,
 	                   const VectorRunType& runs,
 	                   const PlotParamsType* plotParams)
-	: myInput_(myInput),
-	  geometry2_(geometry2),
-	  paramsDmrg_(myInput),
-	  gf_(gf),
-	  runs_(runs),
-	  plotParams_(plotParams),
-	  modelSelector_(paramsDmrg_.model),
-	  model_(modelSelector_(paramsDmrg_,myInput_,geometry2_)),
-	  tsp_(myInput_,model_)
+	    : myInput_(myInput),
+	      geometry2_(geometry2),
+	      paramsDmrg_(myInput),
+	      gf_(gf),
+	      runs_(runs),
+	      plotParams_(plotParams),
+	      modelSelector_(paramsDmrg_.model),
+	      model_(modelSelector_(paramsDmrg_,myInput_,geometry2_)),
+	      tsp_(myInput_,model_)
 	{
 		if (geometry2.label(0) != "star")
 			throw PsimagLite::RuntimeError("ParallelDmrgSolver: only geometry star\n");
 
 		paramsDmrg_.electronsUp = myInput_.electrons(SPIN_UP);
 		paramsDmrg_.electronsDown = myInput_.electrons(SPIN_DOWN);
+
+		PsimagLite::String fstreamName = removeExtension(paramsDmrg_.filename);
+		fstreamName += "_redirect.txt";
+		fstream_.open(fstreamName.c_str(),std::ios::app);
+		OutputRedirect outputRedirect(fstream_);
 		GsParamsType tsp(myInput_,model_);
 		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
 		dmrgSolver.main(geometry2_);
+		outputRedirect.stop();
+
 		energy_ = dmrgSolver.energy();
 	}
 
@@ -141,7 +180,7 @@ public:
 		clusterSites = static_cast<SizeType>(sqrt(clusterSites));
 		SizeType l = paramsDmrg_.filename.length();
 		paramsDmrg_.filename = paramsDmrg_.filename.substr(0,l-4) +
-		                         ttos(mpiRank) + ".txt";
+		        ttos(mpiRank) + ".txt";
 		for (SizeType p=0;p<blockSize;p++) {
 			SizeType px = (threadNum+npthreads*mpiRank)*blockSize + p;
 			if (px >= total || px >= runs_.size()) continue;
@@ -176,12 +215,14 @@ public:
 			//tsp_.setSite(1,siteDmrg);
 
 			RealType omegaValue = (plotParams_) ? plotParams_->omega1 +
-			                        plotParams_->deltaOmega*run.omegaIndex : 0.0;
+			                                      plotParams_->deltaOmega*run.omegaIndex : 0.0;
 			if (!freqDependent) omegaValue = 0;
 			tsp_.omega(PsimagLite::FREQ_REAL,omegaValue);
 
+			OutputRedirect outputRedirect(fstream_);
 			SolverType dmrgSolver(model_,tsp_,myInput_);
 			dmrgSolver.main(geometry2_);
+			outputRedirect.stop();
 
 			energy_ = dmrgSolver.energy();
 
@@ -198,13 +239,15 @@ public:
 
 	RealType density(SizeType, SizeType total2)
 	{
+		OutputRedirect outputRedirect(fstream_);
 		GsParamsType tsp(myInput_,model_);
 		SolverGroundStateType dmrgSolver(model_,tsp,myInput_);
 		dmrgSolver.main(geometry2_);
+		outputRedirect.stop();
 
 		typename TargetingGroundStateType::TargetVectorType::value_type sum = 0.0;
 		for (SizeType site = 0; site < total2; ++site)
-				sum += dmrgSolver.inSitu(site);
+			sum += dmrgSolver.inSitu(site);
 
 		return std::real(sum);
 	}
@@ -255,6 +298,16 @@ private:
 		return z;
 	}
 
+	PsimagLite::String removeExtension(const PsimagLite::String& filename) const
+	{
+		PsimagLite::String::const_reverse_iterator ret =
+		        std::find(filename.rbegin(), filename.rend(), '.' );
+
+		return ret == filename.rend()
+		        ? filename
+		        : PsimagLite::String(filename.begin(), ret.base() - 1);
+	}
+
 	DcaToDmrgType& myInput_;
 	const VaryingGeometryType& geometry2_;
 	ParametersDmrgSolverType paramsDmrg_;
@@ -265,6 +318,7 @@ private:
 	const ModelType& model_;
 	RealType energy_;
 	TargettingParamsType tsp_;
+	std::ofstream fstream_;
 };
 
 }
