@@ -18,7 +18,6 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #ifndef ANDERSON_FIT_H
 #define ANDERSON_FIT_H
 #include "Vector.h"
-#include "String.h"
 #include "MersenneTwister.h"
 #include "MultiMin.h"
 

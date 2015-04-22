@@ -17,7 +17,7 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 */
 #ifndef DCA_PARAMETERS_H
 #define DCA_PARAMETERS_H
-#include "String.h"
+#include "AllocatorCpu.h"
 
 namespace OpenDca {
 

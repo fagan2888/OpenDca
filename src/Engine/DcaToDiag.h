@@ -18,7 +18,6 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #ifndef DCA_TO_DIAG_H
 #define DCA_TO_DIAG_H
 #include "Vector.h"
-#include "String.h"
 #include "Matrix.h"
 #include "DcaLoopGlobals.h"
 #include "ParticleSectors.h"

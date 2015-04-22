@@ -18,7 +18,6 @@ along with OpenDca. If not, see <http://www.gnu.org/licenses/>.
 #ifndef OPENDCA_INDEXING_H
 #define OPENDCA_INDEXING_H
 #include "Vector.h"
-#include "String.h"
 #include "Matrix.h"
 #include "DcaLoopGlobals.h"
 

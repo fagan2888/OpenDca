@@ -89,8 +89,8 @@ class ParallelDmrgSolver {
 	MatrixVectorType,
 	WaveFunctionTransfType> TargetingGroundStateType;
 	typedef typename TargetingType::MatrixVectorType::ModelType ModelType;
-	typedef typename TargetingType::TargettingParamsType TargettingParamsType;
-	typedef typename TargetingGroundStateType::TargettingParamsType GsParamsType;
+	typedef typename TargetingType::TargetParamsType TargetParamsType;
+	typedef typename TargetingGroundStateType::TargetParamsType GsParamsType;
 	typedef Dmrg::DmrgSolver<TargetingType> SolverType;
 	typedef Dmrg::DmrgSolver<TargetingGroundStateType> SolverGroundStateType;
 	typedef typename DcaSolverBaseType::MatrixType MatrixType;
@@ -317,7 +317,7 @@ private:
 	Dmrg::ModelSelector<ModelType> modelSelector_;
 	const ModelType& model_;
 	RealType energy_;
-	TargettingParamsType tsp_;
+	TargetParamsType tsp_;
 	std::ofstream fstream_;
 };
 
