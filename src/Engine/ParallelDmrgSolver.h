@@ -154,8 +154,9 @@ public:
 		if (geometry2.label(0) != "star")
 			throw PsimagLite::RuntimeError("ParallelDmrgSolver: only geometry star\n");
 
-		paramsDmrg_.electronsUp = myInput_.electrons(SPIN_UP);
-		paramsDmrg_.electronsDown = myInput_.electrons(SPIN_DOWN);
+		throw PsimagLite::RuntimeError("Lines below need fixing\n");
+		//paramsDmrg_.electronsUp = myInput_.electrons(SPIN_UP);
+		//paramsDmrg_.electronsDown = myInput_.electrons(SPIN_DOWN);
 
 		PsimagLite::String fstreamName = removeExtension(paramsDmrg_.filename);
 		fstreamName += "_redirect.txt";
